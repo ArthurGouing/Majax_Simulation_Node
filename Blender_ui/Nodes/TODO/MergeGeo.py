@@ -1,0 +1,1 @@
+# Regroup two geometry i.e. new_geo = list(geo_1_data) + list(geo_2_data) for all data i.e. point, primitive, parameters
