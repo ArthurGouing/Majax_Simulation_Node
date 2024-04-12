@@ -20,5 +20,5 @@ class BlImportGeoOperator(Operator):
         self.obj = node.obj
 
     def compute(self, *args: Data) -> None:
-        print("Compute Import geo")
+        print("     Compute Import geo")
         return

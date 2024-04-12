@@ -8,7 +8,6 @@ from .data import __all__ as data_class_list
 from .operator import *
 from .operator import __all__ as ex_class_list
 
-from .graph import ComputationGraph
 from .compute_manager import ComputeManager
 from .queue_gpu import OpenCLQueue
 

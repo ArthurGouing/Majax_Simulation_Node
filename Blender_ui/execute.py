@@ -16,7 +16,6 @@ import bpy
 #         print(context)
 #         print(*context.__dict__.items(), sep="\n")
 #         return {'FINISHED'}
-
 class MajaxExecuteOperator(bpy.types.Operator):
     """Run the Simulation graph computation"""
     bl_idname = "majax.execute_node_tree"
@@ -37,5 +36,19 @@ class MajaxExecuteOperator(bpy.types.Operator):
         print("frame:", start_frame, "--", end_frame)
 
         nodetree.execute(start_frame, end_frame)
+
+        return {'FINISHED'}
+
+class MajaxCompileOperator(bpy.types.Operator):
+    """Compile all kernels"""
+    bl_idname = "majax.compile_node_tree"
+    bl_label = "Majax Compile Operator"
+
+    def execute(self, context):
+        # Poll already dones in the button layout
+        nodetree = context.space_data.node_tree
+        print("Compile")
+
+        nodetree.compile()
 
         return {'FINISHED'}

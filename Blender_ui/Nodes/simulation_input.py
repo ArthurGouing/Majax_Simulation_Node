@@ -1,5 +1,5 @@
 from bpy.types import Node, NodeFrame
-from bpy.props import IntProperty
+from bpy.props import IntProperty, FloatProperty
 from .base_node import BaseNode
 # TODO: assert only 1 SimInput can exist in the nodegraph !!! (placer dans le nodegraph update ??)
 # 
@@ -22,6 +22,7 @@ class SimInputNode(BaseNode, Node):
 
     # === Properties ===
     substep: IntProperty(default=0, min=0)
+    fps: FloatProperty()
 
     def init(self, context):
         # Available socket: [NodesSocketInt, NodesSocketColor, NodesSocketVector, NodesSocketFloat, NodesSocketBool]
@@ -35,6 +36,7 @@ class SimInputNode(BaseNode, Node):
         # self.inputs.new("NodeSocketImage", "test")
         # self.inputs.new("NodeSocketObject", "GPU_buffer")
         self.name = self.bl_label.replace(" ", "_")
+        self.fps = context.scene.render.fps
         self.inputs.new("NodeSocketGeometry", "Geometry")
         self.inputs.new("NodeSocketVirtual", "")
 
@@ -44,11 +46,8 @@ class SimInputNode(BaseNode, Node):
     
     # Delete Unconnected virtual socket
     def update(self):
-        print("update node")
         delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
-        print(delta_socket, "delta socket doit valoir 1")
         for i, socket in enumerate(self.inputs):
-            print(i, socket)
             if i==0 or i>=len(self.inputs)-1:
                 continue
             if not socket.is_linked:

@@ -16,10 +16,12 @@ class BlSimInputOperator(Operator):
 
     def __init__(self, node: Node) -> None:
         super().__init__(node.name)
+        self.n_substep = node.substep
+        self.fps = node.fps
         pass
 
     def compute(self, *args: Data) -> None:
-        print("Sim input, should not be executed")
+        print("     Sim input, should not be executed")
         return
 
 class BlSimOutputOperator(Operator):
@@ -31,5 +33,5 @@ class BlSimOutputOperator(Operator):
         pass
 
     def compute(self, *args: Data) -> None:
-        print("Sim output, should not be executed")
+        print("     Sim output, should not be executed")
         return

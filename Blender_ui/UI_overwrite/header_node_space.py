@@ -161,7 +161,7 @@ class NODE_HT_header(Header):
         # Execute button for majax 
         if snode.tree_type=='CustomTreeType' and snode.node_tree is not None: 
             layout.separator_spacer()
-            layout.operator("majax.execute_node_tree", text="Compile", icon="DISK_DRIVE")
+            layout.operator("majax.compile_node_tree", text="Compile", icon="DISK_DRIVE")
             layout.operator("majax.execute_node_tree", text="Run", icon="PLAY")
 
         layout.separator_spacer()

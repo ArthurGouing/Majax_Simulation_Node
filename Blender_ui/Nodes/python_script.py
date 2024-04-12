@@ -40,7 +40,6 @@ class PythonScriptNode(BaseNode, Node):
             if not socket.is_linked:
                 self.inputs.remove(socket)
         for i, socket in enumerate(self.outputs):
-            print("output socket: ", i, socket)
             if i>=len(self.outputs)-1:
                 continue
             if not socket.is_linked:

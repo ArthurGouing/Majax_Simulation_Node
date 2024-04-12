@@ -4,6 +4,7 @@
 from .simulation_input import SimInputNode
 from .simulation_output import SimOutputNode
 from .kernel_script import KernelScriptNode
+from .kernel_test import KernelTestNode
 from .python_script import PythonScriptNode
 from .import_geo import ImportGeoNode
 from .export_geo import ExportGeoNode
@@ -12,6 +13,7 @@ from .export_geo import ExportGeoNode
 __all__ = ['SimInputNode',
            'SimOutputNode',
            'KernelScriptNode',
+           'KernelTestNode',
            'PythonScriptNode',
            'ImportGeoNode',
            'ExportGeoNode']

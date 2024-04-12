@@ -15,7 +15,7 @@ class PythonScriptOperator(Operator):
         self.source = src
 
     def compute(self, *args: Data) -> None:
-        print("Execute Python script node")
+        print("     Execute Python script node")
         return
 
 class BlPythonScriptOperator(PythonScriptOperator):

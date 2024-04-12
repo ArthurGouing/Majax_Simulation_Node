@@ -45,9 +45,7 @@ class SimOutputNode(BaseNode, Node):
     # Delete Unconnected virtual socket
     def update(self):
         delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
-        print(delta_socket, "delta socket doit valoir 1")
         for i, socket in enumerate(self.inputs):
-            print(i, socket)
             if i==0 or i>=len(self.inputs)-1:
                 continue
             if not socket.is_linked:

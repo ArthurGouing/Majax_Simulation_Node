@@ -60,6 +60,7 @@ node_categories = [
             NodeItem("SimInputNode"),
             NodeItem("SimOutputNode"),
             NodeItem("KernelScriptNode"),
+            NodeItem("KernelTestNode"),
             NodeItem("PythonScriptNode")
         ],
     ),

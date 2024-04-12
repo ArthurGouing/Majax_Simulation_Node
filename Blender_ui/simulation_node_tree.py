@@ -1,5 +1,5 @@
 from bpy.types import NodeTree
-from Simulation import ComputationGraph, ComputeManager
+from Simulation import ComputeManager
 ####from Simulation import ComputationGraph
 
 
@@ -63,24 +63,27 @@ class SimulationNodeTree(NodeTree):  # Target
                 self.links.remove(i)
 
         # Update Computational Grap un supplément dans l'adaptateur
-        graph = ComputationGraph(self.links, self.nodes)
         try:
-            self.calculator.update_graph(graph)
+            self.calculator.update_graph(self.nodes, self.links)
         except AttributeError:
             self.calculator = ComputeManager()
-            self.calculator.update_graph(graph)
+            self.calculator.update_graph(self.nodes, self.links)
         except Exception as e:
             raise e
 
         # Test graph class
-        args = graph.get_args()
-        print("Args:", *args.keys(), sep="\n")
-        ops = graph.get_ops()
-        print("Ops: ", *[(o.id_name, o.inputs) for o in ops.values()], sep="\n")
+        # args = graph.get_args()
+        print("Args:", *self.calculator.args.keys(), sep="\n")
+        # ops = graph.get_ops()
+        print("Ops: ", *[(o.id_name, o.inputs) for o in self.calculator.ops.values()], sep="\n")
 
     def execute(self, start_frame: int, last_frame: int) -> None:
         """ Realise the computation of the nodetree """
         n_frame = last_frame - start_frame
         self.calculator.compute(n_frame)
+
+    def compile(self) -> None:
+        self.calculator.update_graph(self.nodes, self.links)
+        self.calculator.compile()
         
 
