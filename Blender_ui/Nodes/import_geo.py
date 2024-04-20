@@ -5,7 +5,6 @@ from bpy.props import PointerProperty, BoolProperty, EnumProperty
 from .base_node import BaseNode
 
 enum_prim = [
-    ("BOTH", "Both", "Store edge and face of the object into the primitives of the geometry for the computation", 3),
     ("EDGE", "Edge", "Store edge of the object into the primitives of the geometry for the computation", 1),
     ("FACE", "Face", "Store face of the object into the primitives of the geometry for the computation", 2),
     ("NONE", "None", "Store only the points of the object for the computation", 4),
@@ -30,7 +29,8 @@ class ImportGeoNode(BaseNode, Node):
 
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
-        self.outputs.new("NodeSocketGeometry", "Geometry")
+        self.outputs.new("MajaxSocketGeometry", "Geometry")
+        self.outputs[-1].intent = "out"
 
     # def update(self):
     #     """Delete Unconnected virtual socket"""

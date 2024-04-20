@@ -1,14 +1,8 @@
 import bpy
 from .base_node import BaseNode
 from bpy.types import Node
-from bpy.props import EnumProperty, PointerProperty, IntProperty
-from bpy.types import NodeSocketVirtual
+from bpy.props import PointerProperty, IntProperty
 
-# Make automatique construction of the enum_list from OpenCL device
-available_devices = [
-    ("GPU1", "Gpu_1", "send the computation on gpu_1", 1),
-    ("GPU2", "Gpu_2", "send the computation on the second gpu", 2),
-]
 
 class KernelScriptNode(BaseNode, Node):
     '''Execute the choosen script Kernel'''
@@ -22,7 +16,6 @@ class KernelScriptNode(BaseNode, Node):
     # === Properties ===
     script: PointerProperty(type=bpy.types.Text, name="Script")
     work_group_size: IntProperty(default=256, min=0, name="Kernel size")
-    device: EnumProperty(items=available_devices, name="Device")
 
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
@@ -51,12 +44,18 @@ class KernelScriptNode(BaseNode, Node):
     def draw_buttons(self, context, layout):
         layout.label(text="Script:")
         layout.template_ID(self, "script", new="text.new", open="text.open")
-        layout.prop(self, "device")
         layout.prop(self, "work_group_size")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
         layout.label(text="Script:")
         layout.template_ID(self, "script", new="text.new", open="text.open")
-        layout.prop(self, "device")
-        layout.prop(self, "work_group_size")
+        layout.operator("majax.compile_node_tree", text="Compile", icon="DISK_DRIVE")
+        layout.prop(self, "work_group_size") # Use an str for python expr
+        layout.label(text="")
+        layout.label(text="Outputs")
+        for out in self.outputs:
+            if isinstance(out, MajaxSocketBuffers):
+                row = layout.row()
+                row.prop(out, "point_size")
+                row.prop(out, "prim_size")

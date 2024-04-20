@@ -31,11 +31,11 @@ class Data(ABC):
 
     def __init__(self, socket: NodeSocket, from_op_name: str) -> None:
         # Get data type
-        self.data_type: str = socket.bl_idname[10:] # Extract **** from NodeSocket<****> to get type
+        self.data_type: str = socket.bl_idname[11:] # Extract **** from NodeSocket<****> to get type
         # Update data_id
         self.id_name: str = self.data_type + "_" + from_op_name # where from_op_name is the node name
-        # Save From operator id
-        self.from_operator: str = from_op_name
+        # Bl name of the data soclet ?? for argument either ??
+        self.name: str = socket.name
         # Stock op id which create this data 
         self.data: DataType = None
 
@@ -82,3 +82,33 @@ class Data(ABC):
         if self.computed:
             self.data = None
             self.is_None = True
+
+
+class Argument():
+    def __init__(self, socket: NodeSocket, intent: str, data: str, from_arg:str = None) -> None:
+        # Unic name of the arguments
+        self.id_name: str = socket.name + "_" + socket.node.name + "_" + intent
+        # Name of the argument
+        self.name = socket.name
+        # Intent of the argument: Choose between ["in", "out", "inout"]
+        self.intent: str = socket.intent 
+        # Data where the argument take the value
+        self.data: str = data
+        # Operator which the argument belong to
+        self.op: str = socket.node.name
+        # Argument where it come from (usefull for inout arguement)
+        self.from_arg: str = from_arg
+        if socket.is_output:
+            self.to_op:   list[str] = [l.to_node.name for l in socket.links]
+        else:
+            self.from_op: str = socket.links[0].from_node.name # [l.from_node.name for l in socket.links]
+            
+        # If socket is a buffer: store size
+        if hasattr(socket, "size"):
+            self.size = socket.size
+        else: 
+            self.size = 0 # None pour faire une erreur c'est mieu
+    
+    def get_data(self, args: dict[str, Data]) -> Data:
+        return args[self.data]
+

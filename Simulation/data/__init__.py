@@ -3,10 +3,10 @@
 # Importation files class
 from .data_base import Data
 from .geometry import Geometry
-from .buffer import OpenCLBuffer
+from .buffer import OpenCLBuffers
 
 # Déclaration des éléments à exposer lors de l'importation du package
 __all__ = ['Data',
            'Geometry',
-           'OpenCLBuffer',
+           'OpenCLBuffers',
           ]

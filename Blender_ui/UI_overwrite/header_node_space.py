@@ -152,7 +152,12 @@ class NODE_HT_header(Header):
                 layout.separator_spacer()
             layout.separator_spacer()
 
-            layout.template_ID(snode, "node_tree", new="node.new_node_tree")
+            layout.template_ID(snode, "node_tree", new="majax.new_node_tree")
+            # layout.template_ID(scene, "majax_node_tree", new="majax.new_node_tree")
+            # sur la custom prop majax_node_tree add update function which update the snode.node_tree
+            # def update:
+            # context.space_data.node_tree = self.majax_node_tree
+            # ou le mettre dans le compile
 
         # Put pin next to ID block
         if not is_compositor and display_pin:
@@ -162,7 +167,7 @@ class NODE_HT_header(Header):
         if snode.tree_type=='CustomTreeType' and snode.node_tree is not None: 
             layout.separator_spacer()
             layout.operator("majax.compile_node_tree", text="Compile", icon="DISK_DRIVE")
-            layout.operator("majax.execute_node_tree", text="Run", icon="PLAY")
+            layout.operator("majax.refresh_node_tree", text="Run", icon="PLAY")
 
         layout.separator_spacer()
 

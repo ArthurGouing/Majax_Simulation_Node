@@ -11,14 +11,27 @@ from Simulation.data.data_base import Data
 from .operator_base import Operator
 
 class BlExportGeoOperator(Operator):
-    obj: Object
-    # Static attribute
-    id: int = 0
-
     def __init__(self, node: Node) -> None:
         super().__init__(node.name)
+        self.prim_type = node.geo_options
         self.obj = node.obj
 
     def compute(self, *args: Data) -> None:
-        print("     Compute Export geo")
+        # Update object points
+        for i, p in enumerate(args[0].data.points):
+            self.obj.data.vertices[i].co.x = p[0]
+            self.obj.data.vertices[i].co.y = p[1]
+            self.obj.data.vertices[i].co.z = p[2]
+
+        # Update object edges
+        if self.prim_type=="Edge":
+            for i, p in enumerate(args[0].primitives):
+                self.obj.data.edges[i] = list(p)
+        
+        # Update object faces
+        elif self.prim_type=="Face":
+            for i, p in enumerate(args[0].primitives):
+                self.obj.data.polygons[i] = list(p)
+
+        self.obj.data.update()
         return

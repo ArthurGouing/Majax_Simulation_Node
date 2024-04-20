@@ -31,7 +31,8 @@ class ExportGeoNode(BaseNode, Node):
 
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
-        self.inputs.new("NodeSocketGeometry", "Geometry")
+        self.inputs.new("MajaxSocketGeometry", "Geometry")
+        self.inputs[-1].intent = "in"
 
     # def update(self):
     #     """Delete Unconnected virtual socket"""

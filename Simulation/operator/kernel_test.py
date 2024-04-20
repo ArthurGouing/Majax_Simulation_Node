@@ -10,7 +10,7 @@ from bpy.types import Node
 from .operator_base import Operator
 from Simulation.data.data_base import Data
 from Simulation.queue_gpu import OpenCLQueue
-from Simulation.data.buffer import OpenCLBuffer
+from Simulation.data.buffer import OpenCLBuffers
 
 # Queue ? quand est ce que le ker en a besoin ? init ? compute ?
 # Et comment on indique le worksize ? 
@@ -22,30 +22,39 @@ from Simulation.data.buffer import OpenCLBuffer
 # eq to 1 with customsourcefile, and the source file path is contained in Nodeupdate or whatever
 
 class KernelTestOperator(Operator):
-    def __init__(self, name: str, worksize: int) -> None:
+    def __init__(self, name: str) -> None:
         super().__init__(name)
         self.name = name
         self.kernel: cl.Kernel = None
-        self.source: str = """
-__kernel void ker(__global const float *a, __global float *b)
-{
-    int id = get_global_id(0);
-    b[id] = a[id] + 0.1f;
-}
-"""
-        self.worksize = worksize
+        self.file_name: str = "Test.cl"
+        import os
+        print(os.getcwd())
+        self.source = open('Simulation/kernel/'+self.file_name).read()
         pass
 
     def compile(self, context, options: str | list[str]=list()) -> str:
         error_msg = "Error msg"
         program = cl.Program(context, self.source).build(options=options)
-        self.kernel = program.ker # IMPORTANT TODO : the kernel must be named kernel to work !!!!
+        device = context.get_info(cl.context_info.DEVICES)[0]
+        print("DEVICE : ", device.name, device.vendor)
+        print("STATUS: ", program.get_build_info(device, cl.program_build_info.STATUS))
+        print("OPTIONS: ", program.get_build_info(device, cl.program_build_info.OPTIONS))
+        print("LOG:", program.get_build_info(device, cl.program_build_info.LOG))
+        print("Kernel:", program.all_kernels())
+        self.kernel = program.all_kernels()[0] 
+        print("")
+        print(f" The kernel '{self.kernel.function_name}' take {self.kernel.num_args} arguments")
         return error_msg
 
-    def compute(self, queue: OpenCLQueue, *buffers: Data) -> None:
-        print("     Execute kernel ")
-        self.kernel.set_args(*buffers)
-        event = cl.enqueue_nd_range_kernel(queue, self.kernel, global_work_size=self.worksize) # can specify local_work_size
+    def compute(self, queue: cl.CommandQueue, *buffers: Data) -> None:
+
+        if self.file_name=='Test_2.cl':
+            self.worksize = tuple([buffers[0].data.prim_size[0]])
+            self.kernel.set_args(buffers[0].data.buffers["points"], buffers[0].data.buffers["primitives"])
+        else:
+            self.worksize = tuple([1521])
+            self.kernel.set_args(buffers[0].data.buffers["points"])
+        event = cl.enqueue_nd_range_kernel(queue, self.kernel, self.worksize, None) # can specify local_work_size
 
 
     def delete(self) -> None:
@@ -55,6 +64,4 @@ __kernel void ker(__global const float *a, __global float *b)
 class BlKernelTestOperator(KernelTestOperator):
     """Blender wrapper to provide Blender compatible constructor"""
     def __init__(self, node: Node) -> None:
-        queue = None
-        src = node.script.as_string() if node.script is not None else ""
-        super().__init__(node.name, queue, src, node.work_group_size)
+        super().__init__(node.name)

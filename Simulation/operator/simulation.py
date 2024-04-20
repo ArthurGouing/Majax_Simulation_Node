@@ -4,11 +4,11 @@
 #### Library Import #### 
 
 #### Blender Import #### 
-from bpy.types import Node
+from bpy.types import Node, NodeSocket
 
 #### Local Import #### 
 from .operator_base import Operator
-from Simulation.data.data_base import Data
+from Simulation.data.data_base import Data, Argument
 
 class BlSimInputOperator(Operator):
     # Static attribute

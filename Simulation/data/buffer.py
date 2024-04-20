@@ -2,31 +2,70 @@ import numpy as np
 import pyopencl as cl
 
 from Simulation.queue_gpu import OpenCLQueue
+from Simulation.data.geometry import Geometry
 
 
 ## Quand on update les buffers, Ce sont des kernels en soit, il faudra les faire dans kernel ?
 
-class OpenCLBuffer:
-    context: cl.Context
-    queue: cl.CommandQueue
-    cpu_buffer: cl.Buffer
-    gpu_buffer: cl.Buffer
-    event: cl.Event # Last kernel where this buffer as been involved or list of event where the buffer is involved
-    name: str
+class OpenCLBuffers:
 
-    def __init__(self, data: object) -> None:
+    def __init__(self, context) -> None:
+        self.buffers: dict[str, cl.Buffer] = dict()
+        self.event: cl.Event  = None# Last kernel where this buffer as been involved or list of event where the buffer is involved
+        self.context: cl.Context = context
+
+    def init_void_buffer(self, size) -> None:
         mf = cl.mem_flags
-        self.name = data.name
-        self.cpu_buffer = np.array(data) # to extenx
-        self.gpu_buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf = self.cpu_buffer)
+        buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, size=size)
+        self.buffers.update({"points": buffer})
 
+    def init_from_geo(self, geo: Geometry) -> None:
+        mf = cl.mem_flags
 
-    def update_cpu(self) -> cl.Event: # ??
-        event = cl.enqueue_copy(self.queue, self.cpu_buffer, self.gpu_buffer)
-        return event
+        # Get geo adress i.e. data_id_name ???
 
-    def update_gpu(self) -> cl.Event: # ??
-        event = cl.enqueue_copy(self.queue, self.gpu_buffer, self.cpu_buffer)
+        self.point_size = geo.points.shape
+        buffer_point = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf = geo.points)
+        self.buffers.update({"points": buffer_point})
+
+        if geo.primitives.size:
+            self.prim_size = geo.primitives.shape
+            buffer_primitives = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf = geo.primitives)
+            self.buffers.update({"primitives": buffer_primitives})
+
+        if geo.variables_point:
+            for name, val in geo.variables_point.items():
+                buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuff = val)
+                self.bufers.update({f"pt_var_{name}": buffer})
+        if geo.variables_prim:
+            for name, val in geo.variables_prim.items():
+                buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuff = val)
+                self.bufers.update({f"prim_var_{name}": buffer})
+        if geo.groups:
+            for name, val in geo.groups.items():
+                buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuff = val)
+                self.bufers.update({f"group_{name}": buffer})
+
+    def update_gpu(self, geo: Geometry) -> cl.Event: # ??
+        # TODO: usefull for converter node. I don't see a case where it is usefull as
+        # all buffer must be used in the simulation loop ...
+        pass
+
+    def update_cpu(self, geo: Geometry, queue: cl.CommandQueue) -> cl.Event: # ??
+
+        event = cl.enqueue_copy(queue, self.buffers["points"], geo.points)
+        if geo.primitives:
+            event = cl.enqueue_copy(queue, self.buffers["primitives"], geo.primitives)
+        if geo.variables_point:
+            for name, val in geo.variables_point.items():
+                event = cl.enqueue_copy(queue, self.buffers[f"pt_var_{name}"], val)
+        if geo.variables_prim:
+            for name, val in geo.variables_prim.items():
+                event = cl.enqueue_copy(queue, self.buffers[f"prim_var_{name}"], val)
+        if geo.groups:
+            for name, val in geo.groups.items():
+                event = cl.enqueue_copy(queue, self.buffers[f"group_{name}"], val)
+
         return event
 
     def free(self) -> None: ##Verif s'il y a des free à faire ??

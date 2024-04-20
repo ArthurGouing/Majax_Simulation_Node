@@ -9,7 +9,7 @@ from bpy.types import Node
 from .operator_base import Operator
 from Simulation.data.data_base import Data
 from Simulation.queue_gpu import OpenCLQueue
-from Simulation.data.buffer import OpenCLBuffer
+from Simulation.data.buffer import OpenCLBuffers
 
 # Queue ? quand est ce que le ker en a besoin ? init ? compute ?
 # Et comment on indique le worksize ? 

@@ -18,8 +18,10 @@ class KernelTestNode(BaseNode, Node):
 
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
-        self.inputs.new("NodeSocketBuffers", "Buffer")
-        self.outputs.new('NodeSocketBuffers', "Buffer")
+        self.inputs.new("MajaxSocketBuffers", "Buffer")
+        self.inputs[-1].intent = "inout"
+        self.outputs.new('MajaxSocketBuffers', "Buffer")
+        self.outputs[-1].intent = "inout"
 
     def update(self):
         """Executed when a new link is made. Delete Unconnected virtual socket"""
@@ -27,8 +29,8 @@ class KernelTestNode(BaseNode, Node):
 
     # Properterties edition on the node.
     def draw_buttons(self, context, layout):
-        layout.prop(self, "size")
+        layout.prop(self, "work_group_size")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
-        layout.prop(self, "size")
+        layout.prop(self, "work_group_size")

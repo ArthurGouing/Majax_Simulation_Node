@@ -24,14 +24,15 @@ class PreProcessing:
         self.ordered_ops = compute_order(ops, args, input_ops_name=inputs, output_ops_name=ouputs)
         self.ordered_ops = self.ordered_ops[:-1]
 
-    def compute(self, args: dict[str, Data]) -> None:
+    def compute(self, datas: dict[str, Data]) -> None:
         """Compute the pre processing operators"""
-        print("Pre Process:")
+        print("Pre Process")
         for op in self.ordered_ops: # cf class _iter__
             self.state = f"Computing {op.id_name}" + " | " # op.arg.inputs.get_memory
             # Retreive Arguments
-            input_args = [args[input_id] for input_id in op.inputs]
-            print( "  Computing "+ op.id_name+" | Inputs arguments: ", *[arg.id_name for arg in input_args], sep=", ")
+            input_args = [datas[inp.data] for inp in op.inputs]
+            output_args = [datas[out.data]  for out in op.outputs]
+            # print( "  "+self.state+"Arguments: ", *[arg.id_name for arg in (input_args+output_args)], sep=", ")
 
             # Execute the script
-            op.compute(*input_args)
+            op.compute(*(input_args+output_args))

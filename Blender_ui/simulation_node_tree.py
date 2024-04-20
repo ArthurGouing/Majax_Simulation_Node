@@ -75,7 +75,16 @@ class SimulationNodeTree(NodeTree):  # Target
         # args = graph.get_args()
         print("Args:", *self.calculator.args.keys(), sep="\n")
         # ops = graph.get_ops()
-        print("Ops: ", *[(o.id_name, o.inputs) for o in self.calculator.ops.values()], sep="\n")
+        print("Ops: ", *[(o.id_name, [i.id_name for i in o.inputs], [i.id_name for i in o.outputs]) for o in self.calculator.ops.values()], sep="\n")
+
+    def init_compute(self):
+        self.calculator.init_compute()
+
+    def step_forward(self):
+        self.calculator.step_forward()
+
+    def update_computed_data(self):
+        self.calculator.update_computed_data()
 
     def execute(self, start_frame: int, last_frame: int) -> None:
         """ Realise the computation of the nodetree """
@@ -83,7 +92,13 @@ class SimulationNodeTree(NodeTree):  # Target
         self.calculator.compute(n_frame)
 
     def compile(self) -> None:
-        self.calculator.update_graph(self.nodes, self.links)
+        try:
+            self.calculator.update_graph(self.nodes, self.links)
+        except AttributeError:
+            self.calculator = ComputeManager()
+            self.calculator.update_graph(self.nodes, self.links)
+        except Exception as e:
+            raise e
         self.calculator.compile()
         
 

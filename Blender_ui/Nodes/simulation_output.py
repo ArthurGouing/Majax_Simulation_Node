@@ -1,10 +1,18 @@
 from bpy.types import Node
-from bpy.props import IntProperty
+from bpy.props import IntProperty, EnumProperty
+import pyopencl as cl
 
 
 from .base_node import BaseNode
-# TODO: assert only 1 SimInput can exist in the nodegraph !!! (placer dans le nodegraph update ??)
-# 
+
+# TODO: assert only 1 SimInput for device can exist in the nodegraph !!! (placer dans le nodegraph update ??)
+
+def get_type(t: int) -> str:
+    if t==2: return "CPU"
+    elif t==4: return "GPU"
+    else: return cl.device_type.to_string(t)
+ctx = cl.create_some_context(interactive=False)
+available_devices = [(d.name.upper()+"_"+d.vendor.upper().replace(" ", "_"), get_type(d.type)+"_"+d.name, f"Device {d.name} ({d.vendor}) of type |{get_type(d.type)}|", i) for i, d in enumerate(ctx.devices)]
 
 class SimOutputNode(BaseNode, Node):
     """
@@ -23,6 +31,7 @@ class SimOutputNode(BaseNode, Node):
 
     # === Properties ===
     frequency: IntProperty(default=1, min=1)
+    device: EnumProperty(items=available_devices, name="Device") # Ca c'est dans le sim input plutot
 
     def init(self, context):
         # Available socket: [NodesSocketInt, NodesSocketColor, NodesSocketVector, NodesSocketFloat, NodesSocketBool]
@@ -36,10 +45,12 @@ class SimOutputNode(BaseNode, Node):
         # self.inputs.new("NodeSocketImage", "test")
         # self.inputs.new("NodeSocketObject", "GPU_buffer")
         self.name = self.bl_label.replace(" ", "_")
-        self.inputs.new("NodeSocketBuffers", "Geometry Buffer")
+        self.inputs.new("MajaxSocketBuffers", "Geometry Buffers")
+        self.inputs[-1].intent = "in"
         self.inputs.new("NodeSocketVirtual", "")
 
-        self.outputs.new("NodeSocketGeometry", "Geometry")
+        self.outputs.new("MajaxSocketGeometry", "Geometry")
+        self.outputs[-1].intent = "inout"
         self.outputs.new("NodeSocketVirtual", "")
     
     # Delete Unconnected virtual socket
@@ -54,6 +65,7 @@ class SimOutputNode(BaseNode, Node):
 
     # Properterties edition on the node.
     def draw_buttons(self, context, layout):
+        layout.prop(self, "device")
         layout.prop(self, "frequency")
         pass
 
@@ -61,4 +73,5 @@ class SimOutputNode(BaseNode, Node):
     # If this function is not defined, the draw_buttons function is used instead
     # Properterties edition on the node.
     def draw_buttons_ext(self, context, layout):
+        layout.prop(self, "device")
         layout.prop(self, "frequency")
