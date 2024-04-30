@@ -1,5 +1,5 @@
 from bpy.types import Node
-from bpy.props import IntProperty, EnumProperty
+from bpy.props import IntProperty, EnumProperty, StringProperty
 import pyopencl as cl
 
 
@@ -13,6 +13,8 @@ def get_type(t: int) -> str:
     else: return cl.device_type.to_string(t)
 ctx = cl.create_some_context(interactive=False)
 available_devices = [(d.name.upper()+"_"+d.vendor.upper().replace(" ", "_"), get_type(d.type)+"_"+d.name, f"Device {d.name} ({d.vendor}) of type |{get_type(d.type)}|", i) for i, d in enumerate(ctx.devices)]
+
+print("available debice:", available_devices)
 
 class SimOutputNode(BaseNode, Node):
     """
@@ -32,6 +34,7 @@ class SimOutputNode(BaseNode, Node):
     # === Properties ===
     frequency: IntProperty(default=1, min=1)
     device: EnumProperty(items=available_devices, name="Device") # Ca c'est dans le sim input plutot
+    siminput: StringProperty(name="sim_input", description="name of the Linked SimulationInputNode.")
 
     def init(self, context):
         # Available socket: [NodesSocketInt, NodesSocketColor, NodesSocketVector, NodesSocketFloat, NodesSocketBool]

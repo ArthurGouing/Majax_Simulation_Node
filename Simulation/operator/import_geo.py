@@ -15,7 +15,6 @@ from Simulation.data.geometry import Point, Prim, Geometry
 class BlImportGeoOperator(Operator):
     def __init__(self, node: Node) -> None:
         super().__init__(node.name)
-        print("geo_options dans le Geo import", node.geo_options)
         self.prim_type = node.geo_options
         self.obj = node.obj
 

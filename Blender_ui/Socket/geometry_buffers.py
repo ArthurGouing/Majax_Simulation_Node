@@ -3,7 +3,7 @@
 from bpy.types import Context, UILayout, Node
 from bpy.types import NodeSocket
 #### Import files ####
-from bpy.props import StringProperty
+from bpy.props import StringProperty, BoolProperty
 
 # Custom socket type
 class MajaxSocketBuffers(NodeSocket):
@@ -19,9 +19,13 @@ class MajaxSocketBuffers(NodeSocket):
     # display_shape = 'SQUARE_DOT'
     display_shape = 'SQUARE'
 
-    intent: StringProperty(name="intent", description="type of the socket")
-    point_size: StringProperty(name="point_size", description="Python expression to determine the size of the bufer, for the points channel")
-    prim_size: StringProperty(name="prim_size", description="Pythobn expression to determine the size of the buffer, for the primitives channel")
+    intent: StringProperty(name="intent", description="type of the socket", default="inout")
+    inout: BoolProperty(name="is_inout", description="bool which is true if the socket is of type inout") 
+
+    point_size: StringProperty(name="point_size", description="Python expression to determine the size of the bufer, for the points channel", default="point size")
+    prim_size: StringProperty(name="prim_size", description="Python expression to determine the size of the buffer, for the primitives channel", default="prim size")
+    var_list: StringProperty(name="var_list", description="Python expression to determine the list of buffer variable name that have to be create.", default="variable list")
+    group_list: StringProperty(name="group_list", description="Python expression to determine the list of group name that have to be create.", default="group list")
 
     # Optional function for drawing the socket input value
     def draw(self, context: Context, layout: UILayout, node: Node, text: str):

@@ -27,8 +27,6 @@ class KernelTestOperator(Operator):
         self.name = name
         self.kernel: cl.Kernel = None
         self.file_name: str = "Test.cl"
-        import os
-        print(os.getcwd())
         self.source = open('Simulation/kernel/'+self.file_name).read()
         pass
 

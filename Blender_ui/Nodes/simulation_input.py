@@ -1,5 +1,5 @@
 from bpy.types import Node, NodeSocketVirtual
-from bpy.props import IntProperty, FloatProperty, EnumProperty
+from bpy.props import IntProperty, FloatProperty, EnumProperty, StringProperty
 from .base_node import BaseNode
 # TODO: assert only 1 SimInput can exist in the nodegraph !!! (placer dans le nodegraph update ??)
 # 
@@ -33,6 +33,7 @@ class SimInputNode(BaseNode, Node):
     substep: IntProperty(default=1, min=1)
     fps: FloatProperty()
     device: EnumProperty(items=available_devices, name="Device") # Ca c'est dans le sim input plutot
+    simoutput: StringProperty(name="sim_output", description="name of the Linked SimulationOutputNode.")
 
     def init(self, context):
         # Available socket: [NodesSocketInt, NodesSocketColor, NodesSocketVector, NodesSocketFloat, NodesSocketBool]
@@ -49,7 +50,7 @@ class SimInputNode(BaseNode, Node):
     
     # Delete Unconnected virtual socket
     def update(self):
-        # Update socket creation
+        # Delete unused socket
         delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
         for i, socket in enumerate(self.inputs):
             if i==0 or i>=len(self.inputs)-1:
@@ -57,14 +58,6 @@ class SimInputNode(BaseNode, Node):
             if not socket.is_linked:
                 self.inputs.remove(socket)
                 self.outputs.remove(self.outputs[i+delta_socket]) # +1 car il y a 1 inputs de plus que d'output
-        
-        # Update socket name
-        # for socket in self.inputs:
-        #     if isinstance(socket, NodeSocketVirtual):
-        #         continue
-        #     if socket.intent=="inout" and socket.links:
-        #         socket.name = socket.links[0].from_socket.name
-
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
@@ -75,3 +68,24 @@ class SimInputNode(BaseNode, Node):
     def draw_buttons_ext(self, context, layout):
         layout.prop(self, "device")
         layout.prop(self, "substep")
+        layout.separator()
+        layout.operator("mesh.primitive_monkey_add", text="Generate Sockets")
+        layout.label(text="Inputs: ")
+        for inp in self.inputs:
+            if inp.bl_rna.name == "Virtual Node Socket": continue
+            row = layout.row()
+            row.label(text="    "+inp.name+": ")
+            row.prop(inp, "inout", text="inout")
+        layout.label(text="Outputs: ")
+        for out in self.outputs:
+            if out.bl_rna.name == "Virtual Node Socket" or out.intent=="inout": continue
+            # layout.label(text=out.name+": ")
+            row = layout.row()
+            row.label(text="    "+out.name+": ")
+            # row.label(text="point size")
+            row = layout.row()
+            row.prop(out, "point_size", text="")
+            row.prop(out, "prim_size", text="")
+            row = layout.row()
+            row.prop(out, "var_list", text="")
+            row.prop(out, "group_list", text="")

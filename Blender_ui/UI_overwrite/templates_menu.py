@@ -23,10 +23,3 @@ class TEXT_MT_templates(Menu):
         layout.menu("TEXT_MT_templates_py")
         layout.menu("TEXT_MT_templates_osl")
         layout.menu("TEXT_MT_templates_cl")
-
-def register():
-    pass
-
-def unregister():
-    pass
-
