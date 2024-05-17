@@ -1,6 +1,10 @@
-from bpy.types import NodeTree
+#### Library import #### 
+from itertools import zip_longest
+
+from bpy.types import NodeTree, Node
 from Simulation import ComputeManager
 ####from Simulation import ComputationGraph
+from .Socket import MajaxSocketGeometry, MajaxSocketBuffers
 
 
 # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
@@ -25,111 +29,170 @@ class SimulationNodeTree(NodeTree):  # Target
         Executed when a change happen in the graph. Check forbiden link 
         and add virtual link for multiple inputs/output nodes
         """
-        # Find Simulation Input and Output and link them
-        # En espérant que 2 loops on node ne soit pas trop... Il suffit de le faire/try 1 fois à l'init !
-        for in_node in self.nodes:
-            if not hasattr(in_node, "device"):
-                continue
-            if in_node.bl_idname=="SimInputNode":
-                for out_node in self.nodes:
-                    if not hasattr(out_node, "device"):
-                        continue
-                    if out_node.bl_idname=="SimOutputNode" and out_node.device==in_node.device:
-                        in_node.simoutput = out_node.name
-                        out_node.siminput = in_node.name
+        # Get SimInputNode and SimOutpuNode
+        nodes_in = self.get_sim_input()   # TODO: don't work with multiple sim_input
+        nodes_out = self.get_sim_output() # TODO: don't work with multiple sim_output
+
+        # link the 2 node
+        for n_in, n_out in zip(nodes_in, nodes_out):
+            if n_out.device==n_in.device: # idem
+                n_in.simoutput = n_out.name
+                n_out.siminput = n_in.name
 
         # Dynamic socket creation for Simulation Loop
         for i in self.links:
+            if not (i.to_socket.bl_rna.name == i.from_socket.bl_rna.name):
+                if i.to_socket.bl_idname == "MajaxSocketBase":
+                    src_socket = i.from_socket
+                    node = i.to_node
+                    # op
+                    new_socket = node.inputs.new(src_socket.bl_idname, src_socket.name)
+                    to_socket_id = len(node.inputs)-1
+                    node.inputs.move(to_socket_id-1, to_socket_id)
+                    # Rewire node
+                    self.links.new(src_socket, new_socket)
+                    self.links.remove(i)
+                elif i.from_socket.bl_idname == "MajaxSocketBase":
+                    src_socket = i.to_socket
+                    node = i.from_node
+                    # op
+                    new_socket = node.outputs.new(src_socket.bl_idname, src_socket.name)
+                    to_socket_id = len(node.outputs)-1
+                    node.outputs.move(to_socket_id-1, to_socket_id)
+                    # Rewire node
+                    self.links.new(src_socket, new_socket)
+                    # self.links.new(new_socket, src_socket)
+                    # self.links.remove(i)
+                else:
+                    print("not the same socket type: error have to be raise")
+                    self.links.remove(i)
+            # Same name of the data 
+            elif i.from_socket.name!=i.to_socket.name: 
+                i.to_socket.name = i.from_socket.name
+            continue
+            # 90% the same
             if not (i.to_socket.bl_rna.name == i.from_socket.bl_rna.name): # not the same socket type
                 # Create Input socket if connected to Virtual Socket
-                if (i.to_socket.bl_idname == "NodeSocketVirtual"):
+                if (i.to_socket.bl_idname == "MajaxSocketVirtual"):
+                    src_socket = i.from_socket
                     node = i.to_node
-                    socket_src = i.from_socket
-                    self.create_input_socket(socket_src, node)
+                    # op
+                    new_socket = self.create_socket(src_socket, node.inputs, src_socket.name)
+                    # Rewire node
+                    self.links.new(src_socket, new_socket)
                     self.links.remove(i)
-                    if node.bl_idname == "SimInputNode":
-                        sim_output_node = self.get_sim_output()
-                        self.create_output_socket(socket_src, sim_output_node)
-                # Create Output socket if connected to Virtual Socket
-                elif (i.from_socket.bl_idname == "NodeSocketVirtual"):
+                elif (i.from_socket.bl_idname =="MajaxSocketVirtual"):
+                    src_socket = i.to_socket
                     node = i.from_node
-                    socket_src = i.to_socket
-                    self.create_output_socket(socket_src, node)
-                    self.links.remove(i)
-                    if node.bl_idname == "SimOutputNode":
-                        sim_input_node = self.get_sim_input()
-                        self.create_input_socket(socket_src, sim_input_node)
-            # Delete link between 2 virtual sockets
-            elif i.from_socket.bl_idname == "NodeSocketVirtual":
-                self.links.remove(i)
+                    # op
+                    new_socket = self.create_socket(src_socket, node.outputs, src_socket.name)
+                    # Rewire node
+                    self.links.new(src_socket, new_socket)
+                    # self.links.new(new_socket, src_socket)
+                    # self.links.remove(i)
+                else:
+                    print("not the same socket type: error have to be raise")
+                # Create all needed sockets (several for simulation loop operator)
+            elif i.from_socket.name!=i.to_socket.name: 
+                i.to_socket.name = i.from_socket.name
 
-        # Delete unused dynamic socket for SimInput and SimOutput (can't do in node update cz thoses 2 nodes sockets depend on each others)
-        # ...
-        # Todo
-        # ...
 
-        # Update Computational Graph
-        try:
-            self.calculator.update_graph(self.nodes, self.links)
-        except AttributeError:
-            self.calculator = ComputeManager()
-            self.calculator.update_graph(self.nodes, self.links)
-        except Exception as e:
-            raise e
-
-        # Test graph class
-        # args = graph.get_args()
-        print("Args:", *self.calculator.args.keys(), sep="\n")
-        # ops = graph.get_ops()
-        print("Ops: ", *[(o.id_name, [i.id_name for i in o.inputs], [i.id_name for i in o.outputs]) for o in self.calculator.ops.values()], sep="\n")
-
+        # Assure SimInput and SimOutput consistency
+        for n_in, n_out in zip(nodes_in, nodes_out):
+            self.update_sim_socket(n_in, n_out)
+        
+        # Assure dynamic nodes consistency
+        # for node in self.nodes:
+        #     node.update_dynamic_socket()
 
 
     ######## Dynamic socket utils method ########
 
-    def get_sim_output(self):
+    def get_sim_output(self): # TODO: get the simoutput which correspond to the siminput (if several GPU loops)
+        nodes: list[Node] = list()
         for node in self.nodes:
             if node.bl_idname == "SimOutputNode":
-                return node
-    def get_sim_input(self):
+                nodes.append(node)
+        return nodes
+    def get_sim_input(self): # TODO: idem
+        nodes: list[Node] = list()
         for node in self.nodes:
             if node.bl_idname == "SimInputNode":
-                return node
+                nodes.append(node)
+        return nodes
 
-    def create_input_socket(self, socket, node):
-        n = len([s for s in node.inputs if s.bl_idname==socket.bl_idname])
-        name = socket.from_socket.bl_label if n==0 else socket.bl_label+" "+str(n)
-        new_socket_to = node.inputs.new(socket.bl_idname, name) # replace bl_label by name ?? we can have name or type, don't which one is better
-        if node.bl_idname == "SimInputNode":
-            # Create the equivalent node in the output
-            if socket.bl_idname == "MajaxSocketGeometry":
-                node.outputs.new("MajaxSocketBuffers", "Geometry Buffers "+ str(n)) #for sim in/out
-            else:
-                node.outputs.new(socket.bl_idname, name) #for sim in/out
-            to_socket_id = len(node.outputs)-2
-            node.outputs.move(to_socket_id, to_socket_id+1)
-        self.links.new(socket, new_socket_to)
-        # If linked to virtual, must have last id 
-        to_socket_id = len(node.inputs)-2
-        node.inputs.move(to_socket_id, to_socket_id+1)
+    def create_socket(self, socket, socket_container, base_name): # socket container is either node.inputs or node.outputs
+        # The number of same type socket in the node
+        n = len([s for s in socket_container if s.bl_idname==socket.bl_idname])
+        # Name of the new socket
+        name = base_name if n==0 else base_name +" "+str(n)
+        # Create new_socket
+        new_socket_to = socket_container.new(socket.bl_idname, name) # replace bl_label by name ?? we can have name or type, don't which one is better
+        # Move virtual socket and the new socket
+        to_socket_id = len(socket_container)-2
+        socket_container.move(to_socket_id, to_socket_id+1)
 
-    def create_output_socket(self, socket, node):
-        n = len([s for s in node.outputs if s.bl_idname==socket.bl_idname])
-        name = socket.bl_label if n==0 else socket.bl_label+" "+str(n)
-        new_socket_from = node.outputs.new(socket.bl_idname, name)
-        if node.bl_idname == "SimOutputNode":
-            # Create the equivalent node in the input
-            if socket.bl_idname == "MajaxSocketGeometry":
-                node.inputs.new("MajaxSocketBuffers", "Geometry Buffers"+ str(n)) #for sim in/out
-            else:
-                node.inputs.new(socket.bl_idname, name) #for sim in/out
-            to_socket_id = len(node.inputs)-2
-            node.inputs.move(to_socket_id, to_socket_id+1)
-        socket_to = socket
-        self.links.new(new_socket_from, socket_to)
+        return new_socket_to
 
-        from_socket_id = len(node.outputs)-2
-        node.outputs.move(from_socket_id, from_socket_id+1)
+    
+    def update_sim_socket(self, node_in, node_out):
+        """
+        Don't work with only in and only out because of conflict in name convention between SimInput and SimOutput
+        """
+        # Findt the longest list of data
+        len_inin = len(node_in.inputs[:-1])
+        len_inout = len(node_in.outputs[node_in.delta_socket:-1])
+        len_outin = len(node_out.inputs[:-1])
+        len_outout = len(node_out.outputs[:-1])
+        if max([len_inin, len_inout, len_outin, len_outout]) == len_inin:
+            socket_container = node_in.inputs[:-1]
+        elif max([len_inout, len_outin, len_outout]) == len_inout:
+            socket_container = node_in.outputs[node_in.delta_socket:-1]
+        elif len_outin >= len_outout:
+            socket_container = node_out.inputs[:-1]
+        else:
+            socket_container = node_out.outputs[:-1]
+
+        # loop on all data, and assure coherense between SimInput and SimOuput
+        for socket in socket_container:
+            # Check if data is in both nodes else create it (some test are useless as we now the intent, but it is easier to read)
+            is_simin_in   = [s for s in node_in.inputs   if (s.name==socket.name or s.name==socket.name.replace(" Buffers", ""))] 
+            is_simin_out  = [s for s in node_in.outputs  if (s.name.replace(" Buffers", "")==socket.name or s.name==socket.name)]
+            is_simout_in  = [s for s in node_out.inputs  if (s.name.replace(" Buffers", "")==socket.name or s.name==socket.name)]
+            is_simout_out = [s for s in node_out.outputs if (s.name==socket.name or s.name==socket.name.replace(" Buffers", ""))]
+            if socket.intent=="inout" or socket.intent=="in":
+                if not is_simin_in: 
+                    if isinstance(socket, MajaxSocketBuffers):
+                        self.create_socket(MajaxSocketGeometry, node_in.inputs, socket.name)
+                    else:
+                        self.create_socket(socket, node_in.inputs, socket.name)
+                if not is_simin_out:
+                    if isinstance(socket, MajaxSocketGeometry):
+                        self.create_socket(MajaxSocketBuffers, node_in.outputs, socket.name)
+                    else:
+                        self.create_socket(socket, node_in.outputs, socket.name)
+            if socket.intent=="inout" or socket.intent=="out":
+                if not is_simout_in:
+                    if isinstance(socket, MajaxSocketGeometry):
+                        self.create_socket(MajaxSocketBuffers, node_out.inputs, socket.name)
+                    else:
+                        self.create_socket(socket, node_out.inputs, socket.name)
+                if not is_simout_out:
+                    if isinstance(socket, MajaxSocketBuffers):
+                        self.create_socket(MajaxSocketGeometry, node_out.outputs, socket.name)
+                    else:
+                        self.create_socket(socket, node_out.outputs, socket.name)
+            
+            # Check if the socket are connected else delete
+            if not all([is_simin_in, is_simin_out, is_simout_in, is_simout_out]): # i.e. newly created and the var is_linked isn't correctly updated
+                continue
+            all_socket_is_link = [is_simin_in[0].is_linked, is_simin_out[0].is_linked, is_simout_in[0].is_linked, is_simout_out[0].is_linked]
+            if not any(all_socket_is_link):
+                node_in.inputs.remove(is_simin_in[0])
+                node_in.outputs.remove(is_simin_out[0])
+                node_out.inputs.remove(is_simout_in[0])
+                node_out.outputs.remove(is_simout_out[0])
+                
 
 
     ######## Computation related method ########
@@ -158,4 +221,7 @@ class SimulationNodeTree(NodeTree):  # Target
             raise e
         self.calculator.compile()
         
+        # Test graph class
+        print("Args:", *self.calculator.args.keys(), sep="\n")
+        print("Ops: ", *[(o.id_name, [i.id_name for i in o.inputs], [i.id_name for i in o.outputs]) for o in self.calculator.ops.values()], sep="\n")
 

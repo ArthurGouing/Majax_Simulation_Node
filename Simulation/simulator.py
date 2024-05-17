@@ -114,6 +114,7 @@ class Simulator:
         # forward
         # n_substep = self.parameters["substep"]
         for t in range(self.n_substep):
+            print("  Compute sub-frame", t)
             self.step_forward(args)
 
     def step_forward(self, datas: dict[str, Data]) -> None:

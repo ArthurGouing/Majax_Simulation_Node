@@ -4,7 +4,7 @@ from bpy.props import EnumProperty, PointerProperty, IntProperty
 
 # Make automatique construction of the enum_list from OpenCL device
 class KernelTestNode(BaseNode, Node):
-    '''Execute the choosen script Kernel'''
+    '''Execute the Test script Kernel'''
     # Optional identifier string.
     bl_idname = 'KernelTestNode'
     # Label for nice name display

@@ -58,13 +58,14 @@ class SimOutputNode(BaseNode, Node):
     
     # Delete Unconnected virtual socket
     def update(self):
-        delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
-        for i, socket in enumerate(self.inputs):
-            if i==0 or i>=len(self.inputs)-1:
-                continue
-            if not socket.is_linked:
-                self.inputs.remove(socket)
-                self.outputs.remove(self.outputs[i+delta_socket]) # +1 car il y a 1 inputs de plus que d'output
+        pass
+        # delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
+        # for i, socket in enumerate(self.inputs):
+        #     if i==0 or i>=len(self.inputs)-1:
+        #         continue
+        #     if not socket.is_linked:
+        #         self.inputs.remove(socket)
+        #         self.outputs.remove(self.outputs[i+delta_socket]) # +1 car il y a 1 inputs de plus que d'output
 
     # Properterties edition on the node.
     def draw_buttons(self, context, layout):

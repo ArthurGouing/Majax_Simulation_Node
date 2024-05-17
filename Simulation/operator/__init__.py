@@ -8,6 +8,9 @@ from .script import BlPythonScriptOperator
 from .import_geo import BlImportGeoOperator
 from .export_geo import BlExportGeoOperator
 from .simulation import BlSimInputOperator, BlSimOutputOperator
+from .create_float import BlCreateFloatOperator
+from .create_integer import BlCreateIntegerOperator
+from .create_vector import BlCreateVectorOperator
 
 __all__ = ['Operator',
            'BlOpenCLKernelOperator',
@@ -17,4 +20,7 @@ __all__ = ['Operator',
            'BlExportGeoOperator',
            'BlSimInputOperator',
            'BlSimOutputOperator',
+           'BlCreateFloatOperator',
+           'BlCreateIntegerOperator',
+           'BlCreateVectorOperator',
            ]

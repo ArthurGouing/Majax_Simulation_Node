@@ -22,12 +22,18 @@ def compute_order(ops: dict[str, Operator], args: dict[str, Data], options: str=
     output_ops: list[Operator] = [op for op in ops.values() if op.__class__.__name__ in output_ops_name]
     # Liste des Data que l'l'operator prend en input
     for op in output_ops:
+        if not op.inputs:
+            continue
         for inp in op.inputs:
             find_available_input(ops, args, inp, ordered_op, input_ops_name)
         ordered_op.append(op)
     return ordered_op
 
-def find_available_input( ops: dict[str, Operator], datas: dict[str, Data], arg: Argument, ordered_op: list[Operator], stop_op: list[str]=None) -> None:
+def find_available_input( ops: dict[str, Operator], datas: dict[str, Data], arg: Argument, ordered_op: list[Operator], stop_op: list[str]=None) -> bool:
+    """
+    Correct name should be find/fill argument dependency
+    i.e. add all the op that need to be computed before to create the argument 'arg'
+    """
     op_name = arg.from_op
     op = ops[op_name]
     # If the operator has already been execute, the input argument is available
@@ -35,7 +41,8 @@ def find_available_input( ops: dict[str, Operator], datas: dict[str, Data], arg:
     #     return
     # End of the dependency chain
     if not op.inputs: # End of the dependency chain
-        ordered_op.append(op)
+        if op not in ordered_op:
+            ordered_op.append(op)
         for out in op.outputs: 
             # output_data = args[out] # output_data = self.get_data(out)
             # output_data.computable = True
@@ -46,7 +53,8 @@ def find_available_input( ops: dict[str, Operator], datas: dict[str, Data], arg:
             if  op.__class__.__name__ not in stop_op and not datas[inp.data].computable:
                 find_available_input(ops, datas, inp, ordered_op, stop_op)
             datas[inp.data].computable = False # same as checking op  in ordered_op
-        ordered_op.append(op)
+        if op not in ordered_op:
+            ordered_op.append(op)
         
 
 

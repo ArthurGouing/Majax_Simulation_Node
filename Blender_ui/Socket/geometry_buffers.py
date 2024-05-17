@@ -5,6 +5,13 @@ from bpy.types import NodeSocket
 #### Import files ####
 from bpy.props import StringProperty, BoolProperty
 
+
+def update_inout(self, context):
+    if self.is_output:
+        self.intent = 'inout' if self.inout else 'out'
+    else:
+        self.intent = 'inout' if self.inout else 'in'
+
 # Custom socket type
 class MajaxSocketBuffers(NodeSocket):
     # Description string
@@ -20,7 +27,7 @@ class MajaxSocketBuffers(NodeSocket):
     display_shape = 'SQUARE'
 
     intent: StringProperty(name="intent", description="type of the socket", default="inout")
-    inout: BoolProperty(name="is_inout", description="bool which is true if the socket is of type inout") 
+    inout: BoolProperty(name="is_intent", description="bool which is true if socket type is inout.", default=False, update=update_inout)
 
     point_size: StringProperty(name="point_size", description="Python expression to determine the size of the bufer, for the points channel", default="point size")
     prim_size: StringProperty(name="prim_size", description="Python expression to determine the size of the buffer, for the primitives channel", default="prim size")

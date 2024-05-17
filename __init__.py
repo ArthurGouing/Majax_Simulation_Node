@@ -53,6 +53,17 @@ class MajaxNodeCategory(NodeCategory):
 # all categories in a list
 node_categories = [
     MajaxNodeCategory(
+        "INPUTS",
+        "Inputs Datas",
+        items=[
+            NodeItem("ImportGeoNode"),
+            NodeItem("FloatParameterNode"),
+            NodeItem("VectorParameterNode"),
+            NodeItem("IntegerParameterNode"),
+            NodeItem("TransformCombineNode"),
+        ]
+    ),
+    MajaxNodeCategory(
         "SIMULATION_UTILS",
         "Tools",
         items=[
@@ -115,7 +126,10 @@ def step_forward(scene):
         return
     # Decide if computation have to be refresh:
     delta_frame = scene.frame_current - scene.frame_previous
-    print(delta_frame)
+    # update previous frame
+    scene.frame_previous = scene.frame_current
+    # Compute
+    print("delta frame:", delta_frame)
     if delta_frame == 1:
         # Compute one Simulation Loop and one post-process    
         scene.majax_node_tree.step_forward()
@@ -124,9 +138,6 @@ def step_forward(scene):
         # Do the pre-process part and reset  GPU buffers
         scene.majax_node_tree.init_compute()
         scene.majax_node_tree.update_computed_data()
-
-    # update previous frame
-    scene.frame_previous = scene.frame_current
 
 
 # classes = (SimulationNodeTree, MyCustomSocket, MyCustomInterfaceSocket, MyCustomNode, SimInputNode)
@@ -148,9 +159,12 @@ def register():
     ### Register node add menu ### 
     nodeitems_utils.register_node_categories("CUSTOM_NODES", node_categories)
 
-    ### Add scene property
+    ### Add scene property ###
     bpy.types.Scene.majax_node_tree = bpy.props.PointerProperty(type=bpy.types.NodeTree, name="majax_node")
     bpy.types.Scene.frame_previous = bpy.props.IntProperty(name="p_frame", default=0)
+
+    ### Add other property ### 
+    bpy.types.NodeSocketVirtual.intent = bpy.props.StringProperty(name="intent")
 
     ### Add handlers
     # bpy.app.handlers.animation_playback_pre.append(pre_process)
@@ -165,13 +179,18 @@ def unregister():
     nodeitems_utils.unregister_node_categories("CUSTOM_NODES")
 
     for cls in reversed(classes):
+        print(cls.__name__, cls)
         unregister_class(cls)
 
     ### Remove scene property
     del bpy.types.Scene.majax_node_tree
     del bpy.types.Scene.frame_previous
+    del bpy.types.NodeSocketVirtual.intent
 
     ### Remove handlers
     # bpy.app.handlers.animation_playback_pre.remove(pre_process)
-    bpy.app.handlers.frame_change_pre.remove(step_forward)
-    bpy.app.handlers.frame_change_post.remove(stop_playback)
+    try:
+        bpy.app.handlers.frame_change_pre.remove(bpy.app.handlers.frame_change_pre[0])   # WARN: may cause conflict with other add-on
+        bpy.app.handlers.frame_change_post.remove(bpy.app.handlers.frame_change_post[0]) # idem
+    except:
+        pass

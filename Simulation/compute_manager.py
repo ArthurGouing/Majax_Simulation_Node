@@ -14,7 +14,7 @@ from Blender_ui.Nodes.simulation_input import SimInputNode
 from Blender_ui.Nodes.simulation_output import SimOutputNode
 
 from .operator import __dict__
-op_class_list = [cl for n, cl in __dict__.items() if n[-8:]=="Operator"]
+op_class_list = [cl for n, cl in __dict__.items() if n[-8:]=="Operator"] # == __dict__["__all__"] == from .operator import __all__ as class_list_all
 
 class ComputeManager: # Client
     """
@@ -125,8 +125,9 @@ class ComputeManager: # Client
             # Create operator inputs arguments (link to the data later)
             for socket in node.inputs:
                 # Ignore virtual sockets
-                if socket.bl_idname=="NodeSocketVirtual" :
-                    continue
+                # if socket.bl_idname=="NodeSocketVirtual":
+                if not socket.is_linked or socket.bl_idname=="NodeSocketVirtual":
+                     continue
                 # Find from_arg
                 link = socket.links[0] # only 1 link coz input
                 from_arg = link.from_socket.name + "_" + link.from_node.name + "_out"

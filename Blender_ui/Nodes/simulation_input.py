@@ -34,6 +34,7 @@ class SimInputNode(BaseNode, Node):
     fps: FloatProperty()
     device: EnumProperty(items=available_devices, name="Device") # Ca c'est dans le sim input plutot
     simoutput: StringProperty(name="sim_output", description="name of the Linked SimulationOutputNode.")
+    delta_socket: IntProperty(name="default socket", default=0)
 
     def init(self, context):
         # Available socket: [NodesSocketInt, NodesSocketColor, NodesSocketVector, NodesSocketFloat, NodesSocketBool]
@@ -47,17 +48,12 @@ class SimInputNode(BaseNode, Node):
         self.outputs.new("NodeSocketVirtual", "")
         self.fps = context.scene.render.fps
         print("self.fps")
+
+        # The number of outputs socket which are note inout
+        self.delta_socket = 0 
     
-    # Delete Unconnected virtual socket
     def update(self):
-        # Delete unused socket
-        delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
-        for i, socket in enumerate(self.inputs):
-            if i==0 or i>=len(self.inputs)-1:
-                continue
-            if not socket.is_linked:
-                self.inputs.remove(socket)
-                self.outputs.remove(self.outputs[i+delta_socket]) # +1 car il y a 1 inputs de plus que d'output
+        pass
 
     # Additional buttons displayed on the node.
     def draw_buttons(self, context, layout):
