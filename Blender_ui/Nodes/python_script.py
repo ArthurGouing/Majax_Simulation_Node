@@ -31,8 +31,6 @@ class PythonScriptNode(BaseNode, Node):
 
     def update(self):
         """Delete Unconnected virtual socket, update inout socket"""
-        # init 
-
         # Delete or Create "inout" socket:
         for in_socket in self.inputs:
             if not in_socket.inout:
@@ -47,9 +45,10 @@ class PythonScriptNode(BaseNode, Node):
             out_socket = self.outputs[in_socket.out_id]
             if not (in_socket.is_linked or out_socket.is_linked):
                 # remove both sockets
-                self.outputs.remove(out_socket)
                 self.inputs.remove(in_socket)
-                for in_socket in self.inputs: in_socket.recompute_out_id()
+                self.outputs.remove(out_socket)
+                for in_socket in self.inputs: 
+                    in_socket.recompute_out_id()
 
         # Delete "in" socket (could add with a move and a delete to automatically rewire on the new socket. then recreate a virtual socket)
         for socket in self.inputs:
@@ -59,8 +58,10 @@ class PythonScriptNode(BaseNode, Node):
         for socket in self.outputs:
             if not (socket.is_linked or socket.bl_idname=="MajaxSocketBase" or socket.inout):
                 self.outputs.remove(socket)
-                for in_socket in self.inputs: in_socket.recompute_out_id()
-        # TODO: when an outputs is removed, the out_id of inout socket or misscorresponding. they must be recomputed for all sockets
+                for in_socket in self.inputs: 
+                    in_socket.recompute_out_id()
+        # Note:
+        # Add "in" and "out" socket or made in the node_tree update
 
     # Properterties edition on the node.
     def draw_buttons(self, context, layout):

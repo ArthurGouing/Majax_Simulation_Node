@@ -24,6 +24,7 @@ class FloatParameterNode(BaseNode, Node):
         self.outputs[-1].intent = "out"
 
     def update(self):
+        print("update float parameter node")
         pass
 
     # Properterties edition on the node.

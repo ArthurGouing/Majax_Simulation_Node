@@ -1,6 +1,7 @@
-from bpy.types import Node, NodeSocketVirtual
+from bpy.types import Node
 from bpy.props import IntProperty, FloatProperty, EnumProperty, StringProperty
 from .base_node import BaseNode
+from ..Socket.geometry_buffers import MajaxSocketBuffers 
 # TODO: assert only 1 SimInput can exist in the nodegraph !!! (placer dans le nodegraph update ??)
 # 
 from mathutils import Color
@@ -39,13 +40,15 @@ class SimInputNode(BaseNode, Node):
     def init(self, context):
         # Available socket: [NodesSocketInt, NodesSocketColor, NodesSocketVector, NodesSocketFloat, NodesSocketBool]
         self.name = self.bl_label.replace(" ", "_")
-        self.inputs.new("MajaxSocketGeometry", "Geometry")
-        self.inputs[-1].intent = "inout"
-        self.inputs.new("NodeSocketVirtual", "")
+        self.inputs.new("MajaxSocketBase", "")
+        self.inputs[-1].intent = "in"
 
-        self.outputs.new("MajaxSocketBuffers", "Geometry Buffers")
+        # self.outputs.new("MajaxSocketFloat", "Time")
+        # self.outputs[-1].intent = "out"
+        # self.outputs.new("MajaxSocketFloat", "Dt")
+        # self.outputs[-1].intent = "out"
+        self.outputs.new("MajaxSocketBase", "")
         self.outputs[-1].intent = "out"
-        self.outputs.new("NodeSocketVirtual", "")
         self.fps = context.scene.render.fps
         print("self.fps")
 
@@ -65,23 +68,14 @@ class SimInputNode(BaseNode, Node):
         layout.prop(self, "device")
         layout.prop(self, "substep")
         layout.separator()
-        layout.operator("mesh.primitive_monkey_add", text="Generate Sockets")
         layout.label(text="Inputs: ")
         for inp in self.inputs:
-            if inp.bl_rna.name == "Virtual Node Socket": continue
+            if inp.bl_idname == "MajaxSocketBase": continue
             row = layout.row()
             row.label(text="    "+inp.name+": ")
             row.prop(inp, "inout", text="inout")
         layout.label(text="Outputs: ")
         for out in self.outputs:
-            if out.bl_rna.name == "Virtual Node Socket" or out.intent=="inout": continue
-            # layout.label(text=out.name+": ")
+            if out.bl_idname == "MajaxSocketBase" or out.intent=="inout": continue
             row = layout.row()
             row.label(text="    "+out.name+": ")
-            # row.label(text="point size")
-            row = layout.row()
-            row.prop(out, "point_size", text="")
-            row.prop(out, "prim_size", text="")
-            row = layout.row()
-            row.prop(out, "var_list", text="")
-            row.prop(out, "group_list", text="")

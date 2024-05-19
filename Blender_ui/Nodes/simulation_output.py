@@ -4,6 +4,7 @@ import pyopencl as cl
 
 
 from .base_node import BaseNode
+from ..Socket.geometry_buffers import MajaxSocketBuffers 
 
 # TODO: assert only 1 SimInput for device can exist in the nodegraph !!! (placer dans le nodegraph update ??)
 
@@ -48,30 +49,20 @@ class SimOutputNode(BaseNode, Node):
         # self.inputs.new("NodeSocketImage", "test")
         # self.inputs.new("NodeSocketObject", "GPU_buffer")
         self.name = self.bl_label.replace(" ", "_")
-        self.inputs.new("MajaxSocketBuffers", "Geometry Buffers")
+        self.inputs.new("MajaxSocketBase", "")
         self.inputs[-1].intent = "in"
-        self.inputs.new("NodeSocketVirtual", "")
 
-        self.outputs.new("MajaxSocketGeometry", "Geometry")
-        self.outputs[-1].intent = "inout"
-        self.outputs.new("NodeSocketVirtual", "")
+        self.outputs.new("MajaxSocketBase", "")
+        self.outputs[-1].intent = "out"
     
     # Delete Unconnected virtual socket
     def update(self):
         pass
-        # delta_socket = len(self.outputs) - len(self.inputs) # -1 car i commence à 1
-        # for i, socket in enumerate(self.inputs):
-        #     if i==0 or i>=len(self.inputs)-1:
-        #         continue
-        #     if not socket.is_linked:
-        #         self.inputs.remove(socket)
-        #         self.outputs.remove(self.outputs[i+delta_socket]) # +1 car il y a 1 inputs de plus que d'output
 
     # Properterties edition on the node.
     def draw_buttons(self, context, layout):
         layout.prop(self, "device")
         layout.prop(self, "frequency")
-        pass
 
     # Detail buttons in the sidebar.
     # If this function is not defined, the draw_buttons function is used instead
@@ -79,3 +70,14 @@ class SimOutputNode(BaseNode, Node):
     def draw_buttons_ext(self, context, layout):
         layout.prop(self, "device")
         layout.prop(self, "frequency")
+        layout.separator()
+        layout.label(text="Inputs: ")
+        for inp in self.inputs:
+            if inp.bl_idname == "MajaxSocketBase": continue
+            row = layout.row()
+            row.label(text="    "+inp.name+": ")
+        layout.label(text="Outputs: ")
+        for out in self.outputs:
+            if out.bl_idname == "MajaxSocketBase" or out.intent=="inout": continue
+            row = layout.row()
+            row.label(text="    "+out.name+": ")

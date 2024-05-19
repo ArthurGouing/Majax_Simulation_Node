@@ -90,7 +90,7 @@ class ComputeManager: # Client
             operator = operators[op_name]
             # Create output arguments and datas
             for socket in node.outputs:
-                if socket.bl_idname=="NodeSocketVirtual" :
+                if socket.bl_idname=="MajaxSocketBase" :
                     continue
                 # Don't need to generate data for the last buffer because it is the same as the first buffer of the loop
                 if socket.links:
@@ -126,7 +126,7 @@ class ComputeManager: # Client
             for socket in node.inputs:
                 # Ignore virtual sockets
                 # if socket.bl_idname=="NodeSocketVirtual":
-                if not socket.is_linked or socket.bl_idname=="NodeSocketVirtual":
+                if not socket.is_linked or socket.bl_idname=="MajaxSocketBase":
                      continue
                 # Find from_arg
                 link = socket.links[0] # only 1 link coz input

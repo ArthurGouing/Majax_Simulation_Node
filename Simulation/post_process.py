@@ -25,7 +25,8 @@ class PostProcessing:
         inputs: list[str] = ["BlSimOutputOperator"]
         ouputs: list[str] = ["BlExportGeoOperator"]
         self.ordered_ops = compute_order(ops, args, input_ops_name=inputs, output_ops_name=ouputs)
-        self.ordered_ops = self.ordered_ops[1:]
+        self.ordered_ops = self.ordered_ops[1:] # TODO: faire un truc qui supprime les SimOutputs,
+                                                # car c'est pas forcément le 1er, et il peut y en avoir plusieurs !
 
     def compute(self, datas: dict[str, Data]) -> None:
         """Compute the pre processing operators"""

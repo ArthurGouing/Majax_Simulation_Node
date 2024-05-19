@@ -90,6 +90,8 @@ class Argument():
         self.id_name: str = socket.name + "_" + socket.node.name + "_" + intent
         # Name of the argument
         self.name = socket.name
+        # type of argument
+        self.type = socket.bl_label
         # Intent of the argument: Choose between ["in", "out", "inout"]
         self.intent: str = socket.intent 
         # Data where the argument take the value

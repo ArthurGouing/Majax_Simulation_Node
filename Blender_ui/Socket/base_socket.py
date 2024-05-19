@@ -47,6 +47,7 @@ class MajaxSocketBase(NodeSocket):
             for i, s in enumerate(self.node.outputs):
                 if s.name==self.name:
                     self.out_id = i
+                    self.node.outputs[self.out_id].inout = True
                     break
         elif self.out_id !=-1:
             self.node.outputs[self.out_id].inout = False

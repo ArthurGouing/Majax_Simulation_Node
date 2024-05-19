@@ -21,30 +21,38 @@ from Simulation.data.buffer import OpenCLBuffers
 # eq to 1 with customsourcefile, and the source file path is contained in Nodeupdate or whatever
 
 class OpenCLKernelOperator(Operator):
-    source: str
-    queue: cl.CommandQueue
-    kernel: cl.Kernel
-    size = 256
-    # Static attribute
-    id: int = 0
-
-    def __init__(self, name: str, queue: cl.CommandQueue, source: str, worksize: int) -> None:
+    def __init__(self, name: str, source: str) -> None:
         super().__init__(name)
-        self.queue = queue
-        self.source = source # or extract from source_path
-        self.worksize = worksize
-        pass
+        self.name = name
+        self.kernel: cl.Kernel = None
+        self.source = source # open('Simulation/kernel/'+self.file_name).read()
+        # TODO work size compute 
 
-    def compile(self, options: str | list[str]=list()) -> None:
-        program = cl.Program(self.context, self.source).build(options=options)
-        self.kernel = program.ker # IMPORTANT TODO : the kernel must be named kernel to work !!!!
-        pass
+    def compile(self, context, options: str | list[str]=list()) -> str:
+        # Compile here
+        program = cl.Program(context, self.source).build(options=options)
+        # There is 1 kernel per file i.e. by node kernel operator (logic)
+        self.kernel = program.all_kernels()[0]
+        # Get infor to print all the info to the log
+        error_msg = "Error msg"
+        device = context.get_info(cl.context_info.DEVICES)[0]
+        print("DEVICE : ", device.name, device.vendor)
+        print("STATUS: ", program.get_build_info(device, cl.program_build_info.STATUS))
+        print("OPTIONS: ", program.get_build_info(device, cl.program_build_info.OPTIONS))
+        print("LOG:", program.get_build_info(device, cl.program_build_info.LOG))
+        print("Kernel:", program.all_kernels())
+        print("")
+        print(f" The kernel '{self.kernel.function_name}' take {self.kernel.num_args} arguments")
+        return error_msg
 
     def compute(self, queue: OpenCLQueue, *buffers: Data):
-        print("     Execute kernel ")
-        return
-        self.kernel.set_args(*buffers)
-        event = cl.enqueue_nd_range_kernel(queue, self.kernel, self.worksize)
+        print("     Execute kernel ", self.name)
+        self.worksize = tuple([1521])
+        # self.kernel.set_args(*buffers) # (initial idea)
+        # Link data to kernel arguement
+        self.kernel.set_args(buffers[0].data.buffers["points"], buffers[1].data)
+        event = cl.enqueue_nd_range_kernel(queue, self.kernel, self.worksize, None) # can specify local_work_size
+
 
     def delete(self) -> None:
         # A priori pas utilse pour les kernels, à se renseigner
@@ -53,6 +61,5 @@ class OpenCLKernelOperator(Operator):
 class BlOpenCLKernelOperator(OpenCLKernelOperator):
     """Blender wrapper to provide Blender compatible constructor"""
     def __init__(self, node: Node) -> None:
-        queue = None
         src = node.script.as_string() if node.script is not None else ""
-        super().__init__(node.name, queue, src, node.work_group_size)
+        super().__init__(node.name, src)

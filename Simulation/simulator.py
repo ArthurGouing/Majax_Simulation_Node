@@ -74,6 +74,9 @@ class Simulator:
         # Create Sim_in and Sim_out buffers
         input_geo = self.ordered_ops[0]
         for inp, out in zip(input_geo.inputs, input_geo.outputs): 
+            if inp.type != "Geometry":
+                datas[out.data].data = datas[inp.data].data # TODO: copy inutile de data (negligeable) il faut plutot que la data passe en inout, pour éviter d'avoir 2 data  float, une sur la partie  CPU et une sur la partie GPU alors que l'on a besoin de ca que pour les geometries buffers
+                continue
             geo = datas[inp.data].data
             # Create buffer from geo
             datas[out.data].data = OpenCLBuffers(self.gpu_context)
@@ -129,7 +132,8 @@ class Simulator:
             # print( "  "+self.state+"Inputs arguments: ", *[arg.id_name for arg in (input_args+output_args)], sep=", ")
 
             # Launch the kernel
-            ker.compute(self.queue, *set(input_args+output_args))
+            # ker.compute(self.queue, *set(input_args+output_args))
+            ker.compute(self.queue, *input_args)
 
     def end_frame(self, args: dict[str, Data]) -> None:
         """

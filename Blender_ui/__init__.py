@@ -5,8 +5,8 @@ from .simulation_node_tree import SimulationNodeTree
 
 # Import dir
 from .UI_overwrite import * #TODO: rename to override
-from .Socket import *
 from .Nodes import *
+from .Socket import *
 from .Bl_Operator import *
 
 # Déclaration des éléments à exposer lors de l'importation du package

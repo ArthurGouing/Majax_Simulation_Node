@@ -1,3 +1,6 @@
+#### Library Import ####
+import numpy as np
+
 #### Blender Import #### 
 from bpy.types import Node
 
@@ -15,4 +18,4 @@ class BlCreateFloatOperator(Operator):
     def compute(self, *args: Data) -> None:
         print("     Create float data")
         # Create the value and store it in the data dict
-        args[0].data = self.value
+        args[0].data = np.float32(self.value)
