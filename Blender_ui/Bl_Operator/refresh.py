@@ -10,6 +10,7 @@ class MajaxRefreshOperator(bpy.types.Operator):
     def execute(self, context):
         # Poll already dones in the button layout
         context.scene.frame_current = context.scene.frame_start
-        bpy.ops.screen.animation_play()
+        if not context.screen.is_animation_playing:
+            bpy.ops.screen.animation_play()
 
         return {'FINISHED'}

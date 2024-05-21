@@ -30,7 +30,6 @@ class PostProcessing:
 
     def compute(self, datas: dict[str, Data]) -> None:
         """Compute the pre processing operators"""
-        print("Post Process")
         for op in self.ordered_ops: # cf class _iter__
             self.state = f"Computing {op.id_name}" + " | " # op.arg.inputs.get_memory
             # Retreve arguments
@@ -39,4 +38,6 @@ class PostProcessing:
             # print( "  Computing "+ op.id_name+" | Inputs arguments: ", *[arg.id_name for arg in input_args], sep=", ")
 
             # Execute the script
-            op.compute(*input_args+output_args)
+            all_args = input_args + output_args
+            unic_all_args = dict(zip(all_args, [""]*len(all_args))) # Kind of ordered set to avoid double data
+            op.compute(*unic_all_args.keys()) 

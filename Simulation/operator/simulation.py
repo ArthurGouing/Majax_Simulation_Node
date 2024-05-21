@@ -33,5 +33,4 @@ class BlSimOutputOperator(Operator):
         pass
 
     def compute(self, *args: Data) -> None:
-        print("     Sim output, should not be executed")
         return

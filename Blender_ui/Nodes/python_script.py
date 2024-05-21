@@ -77,12 +77,12 @@ class PythonScriptNode(BaseNode, Node):
         for inp in self.inputs:
             if inp.bl_idname == "MajaxSocketBase": continue
             row = layout.row()
-            row.label(text="    "+inp.name+": ")
+            row.prop(inp, "name")
             row.prop(inp, "inout", text="inout")
+            # row.prop(inp, "name")
         layout.label(text="Outputs: ")
         for out in self.outputs:
             if out.bl_idname == "MajaxSocketBase" or out.intent=="inout": continue
             # layout.label(text=out.name+": ")
             row = layout.row()
-            row.label(text="    "+out.name+": ")
             row.prop(out, "name")

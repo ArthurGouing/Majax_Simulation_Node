@@ -16,6 +16,5 @@ class BlCreateFloatOperator(Operator):
 
 
     def compute(self, *args: Data) -> None:
-        print("     Create float data")
         # Create the value and store it in the data dict
         args[0].data = np.float32(self.value)

@@ -1,6 +1,8 @@
 # Gere les data, les opréation, calcul les graphs, etc
+#### Libraries Import ####
+from time import perf_counter
 #### Blender Import ####
-from bpy.types import Object, Nodes, NodeLinks
+from bpy.types import Nodes, NodeLinks
 
 #### File Import ####
 from .data import Data
@@ -66,6 +68,7 @@ class ComputeManager: # Client
         print("Post proc:", [i.id_name for i in self.post_process.ordered_ops])
 
     def read_graph(self, bl_nodes: Nodes, bl_links: NodeLinks) -> tuple[dict[str, Operator], dict[str, Data]]:
+        t_start = perf_counter()
         operators = dict()
         datas = dict()
         simin_outputs = dict()
@@ -167,11 +170,23 @@ class ComputeManager: # Client
 
             # Reste le cas du lien entre le dernier kernel et le Simoutput
 
+
+        t_end = perf_counter()
+        print(f"\nReading Graph time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        print("")
         return (operators, datas)
 
 
     def compile(self) -> None:
+        t_start = perf_counter()
         [sim.compile() for sim in self.simulators]
+        t_end = perf_counter()
+        print(f"\nCompilation time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        print("")
+
+        err_type = ""
+        err_msg = ""
+        return [err_type, err_msg]
 
 
     def init_compute(self, n_frame: int = None) -> None:
@@ -181,20 +196,36 @@ class ComputeManager: # Client
         # If OpenCL Kernel aren't compile, Compile all kernels i.e. all operator in the simulator
 
         # Computation before simulation loop
+        t_start = perf_counter()
         self.pre_process.compute(self.args)
+        t_end = perf_counter()
+        print(f"\nPre Processing time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        print("")
 
         # Init Simulators (Load GPU buffers)
+        t_start = perf_counter()
         [sim.start_sim(self.args) for sim in self.simulators]
+        t_end = perf_counter()
+        print(f"\nLoading GPU Data time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        print("")
 
         # loop on frames
         # while frame <= n_frame:
     def step_forward(self):
         # loop simulation on substep
         # Kernel computation
+        t_start = perf_counter()
         [sim.compute(self.args) for sim in self.simulators]
+        t_end = perf_counter()
+        print(f"\nGPU Loop Computation time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        print("")
 
         # Transfer data back on the CPU
+        t_start = perf_counter()
         [sim.end_frame(self.args) for sim in self.simulators]
+        t_end = perf_counter()
+        print(f"\nPost Process +  time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        print("")
 
     def update_computed_data(self):
         # Computation after simulation loop

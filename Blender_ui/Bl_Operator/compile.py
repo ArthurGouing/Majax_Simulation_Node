@@ -12,7 +12,13 @@ class MajaxCompileOperator(bpy.types.Operator):
         # Update node tree to the scene
         context.scene.majax_node_tree = nodetree
 
-        print("Compile")
-        nodetree.compile()
+        err_type, error_msg = nodetree.compile()
 
+        # Print Compile in the Info Panel 
+        if err_type=="warn_ker":
+            self.report({'WARNING'}, "Warning raise while compiling kernels: \n" + error_msg)
+        elif err_type=="err_ker":
+            self.report({'ERROR'}, "Error while compiling kernels: \n" + error_msg)
+        else:
+            self.report({'OPERATOR'}, "Compiled Majax Graph Successfully")
         return {'FINISHED'}

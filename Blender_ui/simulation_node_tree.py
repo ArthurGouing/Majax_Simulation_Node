@@ -24,6 +24,7 @@ class SimulationNodeTree(NodeTree):  # Target
         print("Init SimulationNodeTree !!!")
         super().__init__()
         self.calculator = ComputeManager()
+        self.need_init = False
 
     def update(self):
         """
@@ -174,6 +175,13 @@ class SimulationNodeTree(NodeTree):  # Target
 
         # loop on all data, and assure coherense between SimInput and SimOuput
         for socket in socket_container:
+            # TODO:
+            # Maintenant que je sais qu'on peut faire node_in.inputs[name]
+            # On peut réécrire cette partie:
+            # s_simin_in = node_in.inputs[s.name] if s.bl_label!="Geometry" else node_in.inputs[s.name]
+            # ou plutot un truc du genre
+            # if not node_in.inputs.get_arg[s.name, None]:
+            #    self.create_socket( ... )
             # Check if data is in both nodes else create it (some test are useless as we now the intent, but it is easier to read)
             is_simin_in   = [s for s in node_in.inputs   if (s.name==socket.name or s.name==socket.name.replace(" Buffers", ""))] 
             is_simin_out  = [s for s in node_in.outputs  if (s.name.replace(" Buffers", "")==socket.name or s.name==socket.name)]
@@ -222,6 +230,7 @@ class SimulationNodeTree(NodeTree):  # Target
 
     def init_compute(self):
         self.calculator.init_compute()
+        self.need_init = False
 
     def step_forward(self):
         self.calculator.step_forward()
@@ -234,16 +243,20 @@ class SimulationNodeTree(NodeTree):  # Target
         n_frame = last_frame - start_frame
         self.calculator.compute(n_frame)
 
-    def compile(self) -> None:
+    def compile(self) -> list[str, str]:
         try:
             self.calculator.update_graph(self.nodes, self.links)
         except AttributeError:
             self.calculator = ComputeManager()
             self.calculator.update_graph(self.nodes, self.links)
         except Exception as e:
+            # return [err_type, err_msg] # TODO: a proper error management
             raise e
-        self.calculator.compile()
+        err_report = self.calculator.compile()
+        self.need_init = True
         
+
         # Test graph class
         print("Args:", *self.calculator.args.keys(), sep="\n")
         print("Ops: ", *[(o.id_name, [i.id_name for i in o.inputs], [i.id_name for i in o.outputs]) for o in self.calculator.ops.values()], sep="\n")
+        return err_report # [err_type, err_msg]

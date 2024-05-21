@@ -21,10 +21,13 @@ from Simulation.data.buffer import OpenCLBuffers
 # eq to 1 with customsourcefile, and the source file path is contained in Nodeupdate or whatever
 
 class OpenCLKernelOperator(Operator):
-    def __init__(self, name: str, source: str) -> None:
+    def __init__(self, name: str, source: str, method: str, expr: str=None) -> None:
         super().__init__(name)
         self.name = name
         self.kernel: cl.Kernel = None
+        self.worksize = None
+        self.worksize_method = method
+        self.worksize_expr = expr
         self.source = source # open('Simulation/kernel/'+self.file_name).read()
         # TODO work size compute 
 
@@ -46,12 +49,25 @@ class OpenCLKernelOperator(Operator):
         return error_msg
 
     def compute(self, queue: OpenCLQueue, *buffers: Data):
-        print("     Execute kernel ", self.name)
-        self.worksize = tuple([1521])
+        if not self.worksize:
+            self.compute_worksize(buffers[0].data) # i.e. Get le 1er buffer geometry inout
         # self.kernel.set_args(*buffers) # (initial idea)
         # Link data to kernel arguement
         self.kernel.set_args(buffers[0].data.buffers["points"], buffers[1].data)
         event = cl.enqueue_nd_range_kernel(queue, self.kernel, self.worksize, None) # can specify local_work_size
+    
+    def compute_worksize(self, buffer: OpenCLBuffers):
+        # Correct previous design error TODO:
+        point_size = buffer.point_size[0]
+        prim_size = buffer.prim_size[0]
+
+        if self.worksize_method=='POINT':
+            self.worksize = (point_size,)
+        elif self.worksize_method=='PRIM':
+            self.worksize = (prim_size,)
+        elif self.worksize_method=='CUSTOM':
+            self.worksize = eval(self.worksize_expr)
+        print("Compute worksize: ", self.worksize)
 
 
     def delete(self) -> None:
@@ -62,4 +78,5 @@ class BlOpenCLKernelOperator(OpenCLKernelOperator):
     """Blender wrapper to provide Blender compatible constructor"""
     def __init__(self, node: Node) -> None:
         src = node.script.as_string() if node.script is not None else ""
-        super().__init__(node.name, src)
+        expr = node.work_group_expr if node.work_group_size=='CUSTOM' else None
+        super().__init__(node.name, src, node.work_group_size, expr)

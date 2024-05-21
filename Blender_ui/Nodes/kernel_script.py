@@ -1,9 +1,14 @@
 import bpy
 from .base_node import BaseNode
 from bpy.types import Node
-from bpy.props import PointerProperty, IntProperty
+from bpy.props import PointerProperty, EnumProperty, StringProperty
 from Blender_ui.Socket import MajaxSocketBuffers
 
+work_size_method = [
+                    ('POINT', "Buffer point size", "1D Grid which have the same size than the number of points of the first inout Geometry Buffers", 0),
+                    ('PRIM', "Buffer primitive size", "1D Grid which have the same size than the number of primitives of the first inout Geometry Buffers", 1),
+                    ('CUSTOM', "Custom", "Enter a python expression which return the grid size as tuple of size<=3. You can use 'point_size' to access the number of point in the 1st inout buffer and 'prim_size' for the number of primitives (Read the documentation for relevant example).", 2)
+]
 
 class KernelScriptNode(BaseNode, Node):
     '''Execute the choosen script Kernel'''
@@ -16,7 +21,9 @@ class KernelScriptNode(BaseNode, Node):
 
     # === Properties ===
     script: PointerProperty(type=bpy.types.Text, name="Script")
-    work_group_size: IntProperty(default=256, min=0, name="Kernel size")
+    # work_group_size: IntProperty(default=256, min=0, name="Kernel size")
+    work_group_size: EnumProperty(items=work_size_method, name="Kernel size", description="Choose the method used to determine the size of the computation grid.")
+    work_group_expr: StringProperty(name="", default="(len(point_size))")
 
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
@@ -63,7 +70,9 @@ class KernelScriptNode(BaseNode, Node):
     def draw_buttons(self, context, layout):
         layout.label(text="Script:")
         layout.template_ID(self, "script", new="text.new", open="text.open")
-        layout.prop(self, "work_group_size", text="(expression or enum or both ??)")
+        layout.prop(self, "work_group_size", text="Size")
+        if self.work_group_size == 'CUSTOM':
+            layout.prop(self, "work_group_expr")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
@@ -78,6 +87,7 @@ class KernelScriptNode(BaseNode, Node):
             row = layout.row()
             row.label(text="    "+inp.name+": ")
             row.prop(inp, "inout", text="inout")
+            row.inp(out, "name")
         layout.label(text="Outputs: ")
         for out in self.outputs:
             if out.bl_idname == "MajaxSocketBase" or out.intent=="inout": continue

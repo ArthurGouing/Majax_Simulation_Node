@@ -15,7 +15,12 @@ class PythonScriptOperator(Operator):
         self.source = src
 
     def compute(self, *args: Data) -> None:
-        print("     Execute Python script node")
+        # Rewrite script with custom 
+        exec(self.source, globals())
+
+        # execute script with correct arguments
+        # TODO: find the data by their name ! for coherence with kernel script where it is mendatory
+        script(*[a.data for a in args])
         return
 
 class BlPythonScriptOperator(PythonScriptOperator):

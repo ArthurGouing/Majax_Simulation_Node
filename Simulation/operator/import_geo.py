@@ -20,7 +20,6 @@ class BlImportGeoOperator(Operator):
 
 
     def compute(self, *args: Data) -> None:
-        print("     Compute Import geo")
         # Init
         points = list()
         prims = list()

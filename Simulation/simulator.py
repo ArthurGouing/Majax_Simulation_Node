@@ -69,8 +69,6 @@ class Simulator:
         # self.buffers = dict[args_name: buffersize]
 
     def start_sim(self, datas: dict[str, Data]) -> None:
-        print("Simulator:")
-        print("  start sim: create buffers and load the first buffers")
         # Create Sim_in and Sim_out buffers
         input_geo = self.ordered_ops[0]
         for inp, out in zip(input_geo.inputs, input_geo.outputs): 
@@ -117,7 +115,6 @@ class Simulator:
         # forward
         # n_substep = self.parameters["substep"]
         for t in range(self.n_substep):
-            print("  Compute sub-frame", t)
             self.step_forward(args)
 
     def step_forward(self, datas: dict[str, Data]) -> None:
@@ -133,7 +130,9 @@ class Simulator:
 
             # Launch the kernel
             # ker.compute(self.queue, *set(input_args+output_args))
-            ker.compute(self.queue, *input_args)
+            all_args = input_args + output_args
+            unic_all_args = dict(zip(all_args, [""]*len(all_args))) # Kind of ordered set to avoid double data
+            ker.compute(self.queue, *unic_all_args.keys()) 
 
     def end_frame(self, args: dict[str, Data]) -> None:
         """
@@ -153,15 +152,17 @@ class Simulator:
                 cl.enqueue_copy(self.queue, data_h.primitives, data_d.buffers["primitives"])
             if data_h.variables_point:
                 for name, host_buff in data_h.variables_point.items():
-                    cl.enqueue_copy(self.queue, host_buff, data_d.buffers[f"pt_var_{name}"])
+                    if not host_buff.stationary:
+                        cl.enqueue_copy(self.queue, host_buff.value, data_d.buffers[f"pt_var_{name}"])
             if data_h.variables_prim:
                 for name, host_buff in data_h.variables_prim.items():
-                    cl.enqueue_copy(self.queue, host_buff, data_d.buffers[f"prim_var_{name}"])
+                    if not host_buff.stationary:
+                        cl.enqueue_copy(self.queue, host_buff.value, data_d.buffers[f"prim_var_{name}"])
             if data_h.groups:
                 for name, host_buff in data_h.groups.items():
                     cl.enqueue_copy(self.queue, host_buff, data_d.buffers[f"group_{name}"])
 
-    def read_results(self, result: str | list[str], frequency: int=1) -> None:
+    def read_results(self, result: str | list[str], frequency: int=1) -> None: # useless
         """
         Called at the 'Simulation Output Node'
         Read the computed results from the GPU,

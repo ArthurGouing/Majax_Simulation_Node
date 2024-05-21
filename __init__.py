@@ -11,6 +11,7 @@ os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 # Utils
 import bpy
 from bpy.utils import register_class, unregister_class
+from time import perf_counter
 
 # Import Addon files
 # Overwrite 
@@ -109,19 +110,15 @@ def stop_playback(scene):
     if(scene.frame_current == scene.frame_end):
         bpy.ops.screen.animation_cancel(restore_frame=False)
 
-def pre_process(scene):
-    print("pre process from handler")
-    if scene.majax_node_tree: # Better to add/remove the handler dynamically when there is majax_node_tree linked to the scene
-        scene.majax_node_tree.init_compute()
-
 def step_forward(scene):
     """ 
     Rules of computation according to frame change:
      - if we go to the next frame:     Compute one Simulation loop
      - if we go to the previous frame: Do nothing
      - if we jump to a father frame:   Reset the computation
+     - if we compile and go to the next step: the computation is'nt init --> Faire l'init dans la compile ?
     """
-    print(f"\nFrame: {scene.frame_current}")
+    t_start=perf_counter()
     if not scene.majax_node_tree: # idem
         return
     # Decide if computation have to be refresh:
@@ -132,12 +129,30 @@ def step_forward(scene):
     print("delta frame:", delta_frame)
     if delta_frame == 1:
         # Compute one Simulation Loop and one post-process    
+        t_1 = perf_counter()
+        if not hasattr(scene.majax_node_tree, "calculator"):
+            scene.majax_node_tree.compile()
+        elif scene.majax_node_tree.need_init:
+            scene.majax_node_tree.init_compute()
+        t_2 = perf_counter()
         scene.majax_node_tree.step_forward()
+        t_3 = perf_counter()
         scene.majax_node_tree.update_computed_data()
+        t_4 = perf_counter()
     elif delta_frame != -1 and delta_frame != 0:
         # Do the pre-process part and reset  GPU buffers
+        if not hasattr(scene.majax_node_tree, "calculator"):
+            scene.majax_node_tree.compile()
         scene.majax_node_tree.init_compute()
         scene.majax_node_tree.update_computed_data()
+    t_end = perf_counter()
+    print(f"\nFrame {scene.frame_current}  time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+    print(f"Detail:")
+    print(f"  if:           {(t_2-t_1)*1000}")
+    print(f"  step_forward: {(t_3-t_2)*1000}")
+    print(f"  update_data:  {(t_4-t_3)*1000}")
+    print(f"  else:         {(t_end-t_4)*1000}")
+    print("")
 
 
 # classes = (SimulationNodeTree, MyCustomSocket, MyCustomInterfaceSocket, MyCustomNode, SimInputNode)
@@ -169,7 +184,8 @@ def register():
     ### Add handlers
     # bpy.app.handlers.animation_playback_pre.append(pre_process)
     bpy.app.handlers.frame_change_pre.append(step_forward)
-    bpy.app.handlers.frame_change_post.append(stop_playback)
+    #TODO: Pas indispensable mais je ferais un parametre à coté du Run/Compile pour Loop ou pas la Timeline
+    # bpy.app.handlers.frame_change_post.append(stop_playback) 
 
 
 
@@ -191,6 +207,6 @@ def unregister():
     # bpy.app.handlers.animation_playback_pre.remove(pre_process)
     try:
         bpy.app.handlers.frame_change_pre.remove(bpy.app.handlers.frame_change_pre[0])   # WARN: may cause conflict with other add-on
-        bpy.app.handlers.frame_change_post.remove(bpy.app.handlers.frame_change_post[0]) # idem
+        # bpy.app.handlers.frame_change_post.remove(bpy.app.handlers.frame_change_post[0]) # idem
     except:
         pass
