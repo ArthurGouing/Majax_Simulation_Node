@@ -76,6 +76,7 @@ class ComputeManager: # Client
         oredered_node = list()
         ordered_ops = list()
 
+        # Build one operator for each node
         for node in bl_nodes:
             if node.type=='FRAME':
                 continue
@@ -89,6 +90,7 @@ class ComputeManager: # Client
                     oredered_node.append(node)
                     break
 
+        # Build the data from 'out' sockets
         for op_name, node in zip(ordered_ops, oredered_node):
             operator = operators[op_name]
             # Create output arguments and datas
@@ -119,7 +121,7 @@ class ComputeManager: # Client
                             op_name = op.id_name
                             break
                     # Socket name must be the same by construction
-                    from_arg_id = socket.name +"_"+ op_name +"_in"
+                    from_arg_id = socket.name.replace(" ","_") +"_"+ op_name +"_in"
                     operator.add_output(socket, "out", "", from_arg_id)
                 # Create outputs where the argument is intent 'inout' (link to the data later)
                 else:
@@ -133,7 +135,7 @@ class ComputeManager: # Client
                      continue
                 # Find from_arg
                 link = socket.links[0] # only 1 link coz input
-                from_arg = link.from_socket.name + "_" + link.from_node.name + "_out"
+                from_arg = link.from_socket.name.replace(" ", "_") + "_" + link.from_node.name + "_out"
                 # Add input
                 operator.add_input(socket, "in", "", from_arg)
 
@@ -141,9 +143,9 @@ class ComputeManager: # Client
         for link in bl_links:
             # Fill all Inputs arguments: arg
             to_op = operators[link.to_node.name]
-            arg = to_op.get_input(link.to_socket.name+"_"+to_op.id_name+"_in")
+            arg = to_op.get_input(link.to_socket.name.replace(" ","_")+"_"+to_op.id_name+"_in")
             op = operators[link.from_node.name]
-            from_arg = op.get_output(link.from_socket.name+"_"+op.id_name+"_out")
+            from_arg = op.get_output(link.from_socket.name.replace(" ","_")+"_"+op.id_name+"_out")
             id_data = from_arg.data
             if from_arg.intent=="inout": # or not id_data
                 from_arg_origin = from_arg

@@ -43,7 +43,7 @@ class OpenCLBuffers:
                 buffer = (
                     cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=val.value)
                     if not val.uniform
-                    else val.value  # should already be a numpy, but it is a precotion
+                    else val.value
                 )
                 self.buffers.update({f"pt_var_{name}": buffer})
         if geo.variables_prim:

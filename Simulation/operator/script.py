@@ -21,6 +21,7 @@ class PythonScriptOperator(Operator):
         # execute script with correct arguments
         # TODO: find the data by their name ! for coherence with kernel script where it is mendatory
         script(*[a.data for a in args])
+        print("script executed")
         return
 
 class BlPythonScriptOperator(PythonScriptOperator):

@@ -86,10 +86,10 @@ class Data(ABC):
 
 class Argument():
     def __init__(self, socket: NodeSocket, intent: str, data: str, from_arg:str = None) -> None:
-        # Unic name of the arguments
-        self.id_name: str = socket.name + "_" + socket.node.name + "_" + intent
         # Name of the argument
-        self.name = socket.name
+        self.name = socket.name.replace(" ", "_")
+        # Unic name of the arguments
+        self.id_name: str = self.name + "_" + socket.node.name + "_" + intent
         # type of argument
         self.type = socket.bl_label
         # Intent of the argument: Choose between ["in", "out", "inout"]

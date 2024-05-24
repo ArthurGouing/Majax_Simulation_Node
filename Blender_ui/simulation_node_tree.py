@@ -233,6 +233,7 @@ class SimulationNodeTree(NodeTree):  # Target
         self.need_init = False
 
     def step_forward(self):
+        # TODO: Update parameter values
         self.calculator.step_forward()
 
     def update_computed_data(self):

@@ -28,7 +28,7 @@ class Operator(ABC):
         if socket.intent=="inout": # Move dans le argument constructor
             arg_out = self.outputs[-1]
             if not from_arg:
-                arg_out.from_arg = socket.name+"_"+socket.node.name+"_in" # Sauf pour l'operator Simulation output
+                arg_out.from_arg = socket.name.replace(" ", "_")+"_"+socket.node.name+"_in" # Sauf pour l'operator Simulation output
 
     def replace_output(self, socket_id_name: str, data: str):
         for socket in self.inputs:

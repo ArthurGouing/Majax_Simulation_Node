@@ -14,7 +14,11 @@
 - Object cannot be deleted as they are used in my MajaxGraph. Need to explore why, and how to overcome it.
 
 # Improvement
-- L'Operator Run devrait pas faire paus, il devrait restart la simu
+- Creation de kernel outptut (pour les tmp kernels)
+- Faire une Loop ou un repeat. et/ou des conditions d'execution de kernel
+- Faire les kernels copy buffers
+- Faire des conditions d'execution des buffers
+- Faire les parametre dynamic : 
 - Le post process est beaucoup trop lent pour pouvoir tirer profit du GPU --> Direct OpenGL GPU read buffer ...
 - Le kernel script lit le text du text editor (pas le fichier text stocker sur le disk) ce qui empeche d'écrire les kernels opencl sur une fenetre VSCode ou Vim sur une autre fenetre. Il faut mettre un autre kerenel node qui lui va lire le ficher. (ou ajouter une option dans le node panel ?)
 - Make it work with multiple Simulation loop for computaiton on 2 or more Accélérator(GPU or unused CPU)

@@ -17,6 +17,13 @@ class Variable():
         elif isinstance(value, int):
             self.value = np.int16(value)
         elif isinstance(value, list) or isinstance(value, tuple):
-            self.value = np.array(value)
+            value = np.array(value)
         else:
             self.value = value
+        if isinstance(value, np.ndarray):
+            if np.issubdtype(value.dtype, np.floating):
+                self.value = value.astype(np.float32)
+            elif np.issubdtype(value.dtype, np.integer):
+                self.value = value.astype(np.int32)
+            else:
+                self.value = value

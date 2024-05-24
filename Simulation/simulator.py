@@ -124,15 +124,13 @@ class Simulator:
         for ker in self.kernels: # cf class _iter__
             self.state = f"Computing {ker.id_name}" + " | " # op.arg.inputs.get_mee
             # Retrieve arguements, and GPU context
-            input_args  = [datas[inp.data] for inp in ker.inputs]
-            output_args = [datas[out.data]  for out in ker.outputs]
+            input_args: dict = {inp.name: datas[inp.data] for inp in ker.inputs}
+            output_args: dict = {out.name: datas[out.data] for out in ker.outputs}
+            input_args.update(output_args)
             # print( "  "+self.state+"Inputs arguments: ", *[arg.id_name for arg in (input_args+output_args)], sep=", ")
 
             # Launch the kernel
-            # ker.compute(self.queue, *set(input_args+output_args))
-            all_args = input_args + output_args
-            unic_all_args = dict(zip(all_args, [""]*len(all_args))) # Kind of ordered set to avoid double data
-            ker.compute(self.queue, *unic_all_args.keys()) 
+            ker.compute(self.queue, input_args) 
 
     def end_frame(self, args: dict[str, Data]) -> None:
         """

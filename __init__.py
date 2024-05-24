@@ -147,11 +147,14 @@ def step_forward(scene):
         scene.majax_node_tree.update_computed_data()
     t_end = perf_counter()
     print(f"\nFrame {scene.frame_current}  time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
-    print(f"Detail:")
-    print(f"  if:           {(t_2-t_1)*1000}")
-    print(f"  step_forward: {(t_3-t_2)*1000}")
-    print(f"  update_data:  {(t_4-t_3)*1000}")
-    print(f"  else:         {(t_end-t_4)*1000}")
+    try:
+        print(f"Detail:")
+        print(f"  if:           {(t_2-t_1)*1000}")
+        print(f"  step_forward: {(t_3-t_2)*1000}")
+        print(f"  update_data:  {(t_4-t_3)*1000}")
+        print(f"  else:         {(t_end-t_4)*1000}")
+    except:
+        pass
     print("")
 
 
