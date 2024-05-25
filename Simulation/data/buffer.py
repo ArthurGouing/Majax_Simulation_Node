@@ -19,7 +19,7 @@ class OpenCLBuffers:
     def init_void_buffer(self, size) -> None:
         mf = cl.mem_flags
         self.point_size = size
-        buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, size=size)
+        buffer = cl.Buffer(self.context, mf.READ_WRITE, size=size, hostbuf=None)
         self.buffers.update({"points": buffer})
 
     def init_from_geo(self, geo: Geometry) -> None:
@@ -27,12 +27,14 @@ class OpenCLBuffers:
 
         # Get geo adress i.e. data_id_name ???
 
-        self.point_size = geo.points.shape
+        self.point_shape = geo.points.shape
+        self.point_size = geo.points.size
         buffer_point = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=geo.points)
         self.buffers.update({"points": buffer_point})
 
         if geo.primitives.size:
-            self.prim_size = geo.primitives.shape
+            self.prim_size = geo.primitives.size
+            self.prim_shape = geo.primitives.shape
             buffer_primitives = cl.Buffer(
                 self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=geo.primitives
             )

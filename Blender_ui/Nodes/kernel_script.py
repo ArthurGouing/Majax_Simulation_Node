@@ -1,7 +1,7 @@
 import bpy
 from .base_node import BaseNode
 from bpy.types import Node
-from bpy.props import PointerProperty, EnumProperty, StringProperty
+from bpy.props import PointerProperty, EnumProperty, StringProperty, BoolProperty
 from Blender_ui.Socket import MajaxSocketBuffers
 
 work_size_method = [
@@ -24,6 +24,7 @@ class KernelScriptNode(BaseNode, Node):
     # work_group_size: IntProperty(default=256, min=0, name="Kernel size")
     work_group_size: EnumProperty(items=work_size_method, name="Kernel size", description="Choose the method used to determine the size of the computation grid.")
     work_group_expr: StringProperty(name="", default="(len(point_size))")
+    wait: BoolProperty(name="Wait", default=False)
 
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
@@ -73,6 +74,8 @@ class KernelScriptNode(BaseNode, Node):
         layout.prop(self, "work_group_size", text="Size")
         if self.work_group_size == 'CUSTOM':
             layout.prop(self, "work_group_expr")
+        row = layout.row()
+        row.prop(self, "wait")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
@@ -81,13 +84,17 @@ class KernelScriptNode(BaseNode, Node):
         layout.template_ID(self, "script", new="text.new", open="text.open")
         layout.operator("majax.compile_node_tree", text="Compile", icon="DISK_DRIVE")
         layout.prop(self, "work_group_size") # Use an str for python expr
+        if self.work_group_size == 'CUSTOM':
+            layout.prop(self, "work_group_expr")
+        row = layout.row()
+        row.prop(self, "wait")
         layout.label(text="Inputs: ")
         for inp in self.inputs:
             if inp.bl_idname == "MajaxSocketBase": continue
             row = layout.row()
             row.label(text="    "+inp.name+": ")
             row.prop(inp, "inout", text="inout")
-            row.inp(out, "name")
+            row.prop(inp, "name")
         layout.label(text="Outputs: ")
         for out in self.outputs:
             if out.bl_idname == "MajaxSocketBase" or out.intent=="inout": continue
@@ -97,5 +104,4 @@ class KernelScriptNode(BaseNode, Node):
             row.prop(out, "name")
             if isinstance(out, MajaxSocketBuffers):
                 row = layout.row()
-                row.prop(out, "point_size")
-                row.prop(out, "prim_size")
+                row.prop(out, "expr_size")

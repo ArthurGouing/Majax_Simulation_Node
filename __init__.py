@@ -65,42 +65,28 @@ node_categories = [
         ]
     ),
     MajaxNodeCategory(
-        "SIMULATION_UTILS",
-        "Tools",
+        "OUTPUTS",
+        "Outputs Datas",
         items=[
-            NodeItem("ImportGeoNode"),
-            NodeItem("ExportGeoNode"),
+            NodeItem("ExportGeoNode")
+        ]
+    ),
+    MajaxNodeCategory(
+        "GPU",
+        "Simulation Operators (GPU)",
+        items=[
             NodeItem("SimInputNode"),
             NodeItem("SimOutputNode"),
             NodeItem("KernelScriptNode"),
+            NodeItem("KernelCopyNode"),
             NodeItem("KernelTestNode"),
-            NodeItem("PythonScriptNode")
         ],
     ),
     MajaxNodeCategory(
-        "OTHERNODES",
-        "Other Nodes",
+        "CPU",
+        "Post/Pre Processing Operators (CPU)",
         items=[
-            # the node item can have additional settings,
-            # which are applied to new nodes
-            # NOTE: settings values are stored as string expressions,
-            # for this reason they should be converted to strings using repr()
-            NodeItem(
-                "SimInputNode",
-                label="Node A",
-                settings={
-                    "my_string_prop": repr("Lorem ipsum dolor sit amet"),
-                    "my_float_prop": repr(1.0),
-                },
-            ),
-            NodeItem(
-                "SimOutputNode",
-                label="Node B",
-                settings={
-                    "my_string_prop": repr("consectetur adipisicing elit"),
-                    "my_float_prop": repr(2.0),
-                },
-            ),
+            NodeItem("PythonScriptNode")
         ],
     ),
 ]

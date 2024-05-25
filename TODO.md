@@ -5,6 +5,7 @@
 - Make a detection collision kernel and add constraints(=primitives)
 
 # Bug
+- Faire une sécurité pour embécher de nomer un argument avec "_" dans les scripts nodes car ca fait buger, ni les espaces !
 - Le pramètre frequency, dans le SimOutput, n'est ni lu ni utilisé dans la simulation (est-ce vraiment utile ??)
 - Redesigne the socket naming / data naming both frontend and backend
 - Le read graph plante quand on a 2 inputs au même endroit, ou un truc du genre (try replace input on SimInputNode)

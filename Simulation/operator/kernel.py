@@ -2,6 +2,7 @@
 import numpy as np
 import re
 import pyopencl as cl
+from time import perf_counter
 
 #### Blender Import #### 
 from bpy.types import Node
@@ -22,13 +23,14 @@ from Simulation.data.buffer import OpenCLBuffers
 # eq to 1 with customsourcefile, and the source file path is contained in Nodeupdate or whatever
 
 class OpenCLKernelOperator(Operator):
-    def __init__(self, name: str, source: str, method: str, expr: str=None) -> None:
+    def __init__(self, name: str, source: str, method: str, wait: bool, expr: str=None) -> None:
         super().__init__(name)
         self.name = name
         self.kernel: cl.Kernel = None
         self.worksize = None
         self.worksize_method = method
         self.worksize_expr = expr
+        self.wait_for = wait
         self.source = source # open('Simulation/kernel/'+self.file_name).read()
         # TODO work size compute 
 
@@ -89,7 +91,7 @@ class OpenCLKernelOperator(Operator):
                 arg_name = re.search("\w*", str_arg[r.span()[1]:]).group()
                 name = self.alias.get(arg_name, arg_name)
                 split = name.split("_")
-                object_name = split[0]+"_Buffers"
+                object_name = split[0]
                 buffer_name = "_".join(split[1:])
                 arg_info = {"name": name}
                 arg_info.update({"type": "buffer"})
@@ -117,10 +119,10 @@ class OpenCLKernelOperator(Operator):
 
     def compute(self, queue: OpenCLQueue, buffers: dict[Data]):
         if not self.worksize:
-            buffer = [buf for name, buf in buffers.items() if name[-7:]=="Buffers"][0]
+            buffer = [buf for buf in buffers.values() if buf.data_type=="Buffers"][0]
             self.compute_worksize(buffer.data) # i.e. Get le 1er buffer geometry inout
 
-        # TODO: A chaque subit !!( très souvent !!!)
+        # TODO: A chaque subit !!( très souvent !!!) (~10% pour 250 elements)
         # on a des test condition et des lecture de dictionnaire
         # Alors que une fois qu'on a trouvé le chemain, c'est tjrs le meme à chaque ité
         # Il faudrait que buffers contienne tous les buffers indiférement du OpenCLBuffer class
@@ -134,27 +136,24 @@ class OpenCLKernelOperator(Operator):
             elif arg_info["type"]=="numpy":
                 data = buffers[object_name].data
                 self.kernel.set_arg(id, data)
+        # TODO: des msg d'erreur clair !
 
-        # self.kernel.set_args(*buffers) # (initial idea)
-        # Link data to kernel arguement
-        # self.kernel.set_args(buffers[0].data.buffers["points"], buffers[1].data)
-        # self.kernel.set_arg(0, buffers[0].data.buffers["points"])
-        # self.kernel.set_arg(1, buffers[0].data.buffers["pt_var_velocity"])
-        # self.kernel.set_arg(2, buffers[0].data.buffers["pt_var_l0"])
-        # self.kernel.set_arg(3, buffers[0].data.buffers["pt_var_neighbor"])
-        # Dt: TODO
-        # self.kernel.set_arg(4, np.float32(0.0416)) # 1/24 !
+        # Launch the kernel
         event = cl.enqueue_nd_range_kernel(queue, self.kernel, self.worksize, None) # can specify local_work_size
+        if self.wait_for:
+            event.wait()
     
     def compute_worksize(self, buffer: OpenCLBuffers):
         # Correct previous design error TODO:
-        point_size = buffer.point_size[0]
-        prim_size = buffer.prim_size[0]
+        point_size = buffer.point_size
+        point_shape = buffer.point_shape
+        prim_size = buffer.prim_size
+        prim_shape = buffer.prim_shape
 
         if self.worksize_method=='POINT':
-            self.worksize = (point_size,)
+            self.worksize = (point_shape[0],)
         elif self.worksize_method=='PRIM':
-            self.worksize = (prim_size,)
+            self.worksize = (prim_shape[0],)
         elif self.worksize_method=='CUSTOM':
             self.worksize = eval(self.worksize_expr)
         print("Compute worksize: ", self.worksize)
@@ -169,4 +168,4 @@ class BlOpenCLKernelOperator(OpenCLKernelOperator):
     def __init__(self, node: Node) -> None:
         src = node.script.as_string() if node.script is not None else ""
         expr = node.work_group_expr if node.work_group_size=='CUSTOM' else None
-        super().__init__(node.name, src, node.work_group_size, expr)
+        super().__init__(node.name, src, node.work_group_size, node.wait, expr)

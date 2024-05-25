@@ -19,8 +19,7 @@ class MajaxSocketBuffers(MajaxSocketBase):
     # display_shape = 'SQUARE_DOT'
     display_shape = 'SQUARE'
 
-    point_size: StringProperty(name="point_size", description="Python expression to determine the size of the bufer, for the points channel", default="point size")
-    prim_size: StringProperty(name="prim_size", description="Python expression to determine the size of the buffer, for the primitives channel", default="prim size")
+    expr_size: StringProperty(name="Size", description="Python expression to determine the size of the bufer", default="point size")
 
     # Optional function for drawing the socket input value
     def draw(self, context: Context, layout: UILayout, node: Node, text: str):

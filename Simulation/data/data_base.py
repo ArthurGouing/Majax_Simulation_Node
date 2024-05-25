@@ -43,12 +43,6 @@ class Data(ABC):
         self.computable: bool = False
         self.computed: bool = False
         return
-        # Import data
-        if self.from_operator.is_importer: # and precompute_import:
-            self.data = self.from_operator.compute()
-            self.is_None = False
-        else:
-            self.data = None
 
     def add_from_op(self, id_name: str) -> None:
         self.from_operator = id_name
@@ -106,8 +100,8 @@ class Argument():
             self.from_op: str = socket.links[0].from_node.name # [l.from_node.name for l in socket.links]
             
         # If socket is a buffer: store size
-        if hasattr(socket, "size"):
-            self.size = socket.size
+        if hasattr(socket, "expr_size"):
+            self.expr_size = socket.expr_size
         else: 
             self.size = 0 # None pour faire une erreur c'est mieu
     

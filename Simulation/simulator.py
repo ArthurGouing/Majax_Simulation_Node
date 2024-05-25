@@ -81,9 +81,18 @@ class Simulator:
             datas[out.data].data.init_from_geo(geo)
 
         # Create intermediate buffers
-        # for arg in self.buffers: # Start at 1 to avoid creating a void buff on newly created buff
-        #     datas[arg.data].data = OpenCLBuffers(self.gpu_context)
-        #     datas[arg.data].data.init_void_buffer(arg.size)
+        for ker in self.kernels:
+            var_list = dict()
+            for inp in ker.inputs:
+                var_list.update({inp.name: datas[inp.data].data})
+
+            for out in ker.outputs:
+                if out.type=='Geometry Buffers' and out.intent=='out':
+                    # Get the values to execut the expr_size
+                    exec("size = "+ out.expr_size, var_list)
+                    size = var_list["size"]
+                    datas[out.data].data = OpenCLBuffers(self.gpu_context)
+                    datas[out.data].data.init_void_buffer(size)
 
     # def init_buffer(self, args: dict[str, Data]) -> None:
     #     mf = cl.mem_flags
@@ -124,6 +133,7 @@ class Simulator:
         for ker in self.kernels: # cf class _iter__
             self.state = f"Computing {ker.id_name}" + " | " # op.arg.inputs.get_mee
             # Retrieve arguements, and GPU context
+            # TODO: Trouver un moyen de chercher les arguments qu'une seule fois ?
             input_args: dict = {inp.name: datas[inp.data] for inp in ker.inputs}
             output_args: dict = {out.name: datas[out.data] for out in ker.outputs}
             input_args.update(output_args)

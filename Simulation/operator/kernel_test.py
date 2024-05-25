@@ -1,4 +1,3 @@
-
 #### Library Import #### 
 import numpy as np
 import pyopencl as cl
