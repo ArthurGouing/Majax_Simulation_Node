@@ -15,7 +15,7 @@ class Variable():
         if isinstance(value, float):
             self.value = np.float32(value)
         elif isinstance(value, int):
-            self.value = np.int16(value)
+            self.value = np.int32(value)
         elif isinstance(value, list) or isinstance(value, tuple):
             value = np.array(value)
         else:

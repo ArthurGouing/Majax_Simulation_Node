@@ -3,6 +3,7 @@ from .base_node import BaseNode
 from bpy.types import Node
 from bpy.props import PointerProperty, EnumProperty, StringProperty, BoolProperty
 from Blender_ui.Socket import MajaxSocketBuffers
+from mathutils import Color
 
 work_size_method = [
                     ('POINT', "Buffer point size", "1D Grid which have the same size than the number of points of the first inout Geometry Buffers", 0),
@@ -27,6 +28,9 @@ class KernelScriptNode(BaseNode, Node):
     wait: BoolProperty(name="Wait", default=False)
 
     def init(self, context):
+        self.use_custom_color = True
+        self.color = Color((0.059, 0.082, 0.188))
+
         self.name = self.bl_label.replace(" ", "_")
         self.inputs.new("MajaxSocketBase", "")
         self.inputs[-1].intent = "in"

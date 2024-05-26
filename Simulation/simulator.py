@@ -8,6 +8,7 @@ from .data.buffer import OpenCLBuffers
 from .graph import compute_order
 from .operator import Operator, BlSimInputOperator
 from Simulation.data.data_base import Data
+from Simulation.control_structure import ControlStructure
 
 
 Kernel = OpenCLKernelOperator
@@ -53,7 +54,7 @@ class Simulator:
         text = f"{self.state} | GPU memory : {self.memoryGPU:.3f} Gb"
         return text
 
-    def order(self, ops: dict[str, Operator], datas: dict [str, Data]) -> None:
+    def order(self, ops: dict[str, Operator], struct_ctrl: dict[str, ControlStructure], datas: dict [str, Data]) -> None:
         """ Called when the graph is updated and eventually some parameters or changed """
         inputs: list[str] = ["BlSimInputOperator"]
         ouputs: list[str] = ["BlSimOutputOperator"]
@@ -61,17 +62,50 @@ class Simulator:
         # Retreive Sim input and Sim output operators
         self.kernels = self.ordered_ops[1:-1] # == kernels
 
-        # Store all GPU buffers in a list
-        self.buffers = {datas[inp.data] for inp in sum([op.inputs for op in self.kernels], []) }
+        # replace base operator by structure control flow
+        # TODO: move that into 'compute_order' and correct it for pos_process and pre_process
+        all_struct = list(struct_ctrl.values())
+        while all_struct:
+            # Find the lower structure level
+            op_names = [op.id_name for op in self.ordered_ops] # as ordered_ops change at each loop, it must be recomputed
+            for struct in all_struct:
+                finded = False
+                if set(struct.child_names).issubset(set(op_names)):
+                    all_struct.remove(struct)
+                    name = struct.id_name
+                    struct = struct_ctrl[name] # useless Not needed as the list take the ptr
+                    finded = True
+                    break
+            if not finded:
+                print("Error")
+                print("all_struct: ", all_struct)
+                print("ordered_ops: ", self.ordered_ops)
 
-        # self.buffers = sum([op.inputs for op in self.ordered_ops], list())
-        # Need to get the size of the buffer to
-        # self.buffers = dict[args_name: buffersize]
+            # Replace the childs by the structure controle
+            index = 0
+            while index < len(self.ordered_ops):
+                op = self.ordered_ops[index]
+                if op.parent!=name:
+                    index+=1
+                    continue
+                del self.ordered_ops[index]
+                # index = index + 1 - 1
+                last_index = index
+                struct.append(op) # Add child to the list of inner op # And sotre the positions where he belive
+
+            # Insert the struct in the ops_list at the last moved_op index
+            self.ordered_ops[:last_index] += [struct]
+
+        # Store all GPU buffers in a list
+        self.input_op = self.ordered_ops.pop(0)
+        self.output_op = self.ordered_ops.pop(-1)
+
+        # self.buffers = {datas[inp.data] for inp in sum([op.inputs for op in self.kernels], []) }
+
 
     def start_sim(self, datas: dict[str, Data]) -> None:
         # Create Sim_in and Sim_out buffers
-        input_geo = self.ordered_ops[0]
-        for inp, out in zip(input_geo.inputs, input_geo.outputs): 
+        for inp, out in zip(self.input_op.inputs, self.input_op.outputs): 
             if inp.type != "Geometry":
                 datas[out.data].data = datas[inp.data].data # TODO: copy inutile de data (negligeable) il faut plutot que la data passe en inout, pour éviter d'avoir 2 data  float, une sur la partie  CPU et une sur la partie GPU alors que l'on a besoin de ca que pour les geometries buffers
                 continue
@@ -94,16 +128,6 @@ class Simulator:
                     datas[out.data].data = OpenCLBuffers(self.gpu_context)
                     datas[out.data].data.init_void_buffer(size)
 
-    # def init_buffer(self, args: dict[str, Data]) -> None:
-    #     mf = cl.mem_flags
-    #     for buff_name in self.inputs:
-    #         # Faire la différence entre les data en output du SimInput, et les lier à leur geométrie respective (fin du nom, normalement)
-    #         # Il faut aussi la taille des buffers, d'une maniètre ou d'une autre
-    #         geo_size = 0
-    #         arg = args[buff_name]
-    #         arg.data = cl.Buffer(self.gpu_context, mf.READ_ONLY | mf.COPY_HOST_PTR, size=geo_size) # Cann directly load buffer
-    #     pass
-
     def compile(self) -> str:
         """
         Compile the OpenCL script
@@ -117,19 +141,23 @@ class Simulator:
 
         return error_msg
 
-    def compute(self, args: dict[str, Data]) -> None:
+    def compute(self, datas: dict[str, Data]) -> None:
         """
         Execute all the Kernels in the graph order on the GPU
         """
         # forward
         # n_substep = self.parameters["substep"]
         for t in range(self.n_substep):
-            self.step_forward(args)
+            self.step_forward(datas)
 
     def step_forward(self, datas: dict[str, Data]) -> None:
         """
         Execute all the kernels for 1 step
         """
+        for op in self.ordered_ops:
+            op.compute(self.queue, datas)
+
+        return
         for ker in self.kernels: # cf class _iter__
             self.state = f"Computing {ker.id_name}" + " | " # op.arg.inputs.get_mee
             # Retrieve arguements, and GPU context
@@ -147,9 +175,8 @@ class Simulator:
         Send data back to CPU buffers before doing the post processing on CPU
         """
         # Get sim output operators
-        simoutput_op = self.ordered_ops[-1]
-        inputs = simoutput_op.inputs
-        outputs = simoutput_op.outputs
+        inputs = self.output_op.inputs
+        outputs = self.output_op.outputs
         for inp, out in zip(inputs, outputs):
             data_d = args[inp.data].data
             data_h = args[out.data].data

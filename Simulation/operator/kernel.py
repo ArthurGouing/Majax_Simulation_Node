@@ -32,6 +32,8 @@ class OpenCLKernelOperator(Operator):
         self.worksize_expr = expr
         self.wait_for = wait
         self.source = source # open('Simulation/kernel/'+self.file_name).read()
+        # associate kernel argument id with data id
+        self.argument: dict = dict()
         # TODO work size compute 
 
     def compile(self, context, options: str | list[str]=list()) -> str:
@@ -86,24 +88,25 @@ class OpenCLKernelOperator(Operator):
 
         for str_arg in arguments:
             # Buffer case
-            r = re.search("global\s*(float|int)\s*\*", str_arg)
-            if r :
-                arg_name = re.search("\w*", str_arg[r.span()[1]:]).group()
+            # str_arg = (global|local|...) (float|int|...) name
+            r = re.findall("\s*(\w*)?\s*(\w*)\s*(\*)?(\w*)", str_arg) 
+            if r[0][3]:
+                arg_name = r[0][3]
                 name = self.alias.get(arg_name, arg_name)
                 split = name.split("_")
                 object_name = split[0]
                 buffer_name = "_".join(split[1:])
                 arg_info = {"name": name}
                 arg_info.update({"type": "buffer"})
+                data_id = [arg.data for arg in sum([self.inputs, self.outputs], []) if arg.name== object_name][0] #TODO: some security here
+                arg_info.update({"data_id": data_id})
                 arg_info.update({"buffer": buffer_name})
-                arg_info.update({"object": object_name})
+                arg_info.update({"object": object_name}) # useless now
                 self.ker_argument_name.update({arg_id: arg_info})
                 arg_id+=1
                 continue
-
-            # Scalar case
-            r = re.findall("((const)?\s*(float|int)\s*)(\w*)", str_arg)
-            if r:
+            else:
+                continue
                 arg_name = r[0][3]
                 name = self.alias.get(arg_name, arg_name)
                 arg_info = {"name": name}
@@ -117,7 +120,7 @@ class OpenCLKernelOperator(Operator):
             # TODO:
         return arg_id
 
-    def compute(self, queue: OpenCLQueue, buffers: dict[Data]):
+    def compute(self, queue: OpenCLQueue, buffers: dict[str, Data]): # buffers=compute_manager.datas
         if not self.worksize:
             buffer = [buf for buf in buffers.values() if buf.data_type=="Buffers"][0]
             self.compute_worksize(buffer.data) # i.e. Get le 1er buffer geometry inout
@@ -129,13 +132,15 @@ class OpenCLKernelOperator(Operator):
         # le buffer[name].data c'est le cl.Buffer
         for id, arg_info in self.ker_argument_name.items():
             object_name = arg_info["object"]
+            data_name = arg_info["data_id"]
             if arg_info["type"]=="buffer":
                 buffer_name = arg_info["buffer"]
-                data = buffers[object_name].data.buffers[buffer_name]
+                data = buffers[data_name].data.buffers[buffer_name]
                 self.kernel.set_arg(id, data)
             elif arg_info["type"]=="numpy":
-                data = buffers[object_name].data
+                data = buffers[data_name].data
                 self.kernel.set_arg(id, data)
+                print(f"add {object_name} to {id}")
         # TODO: des msg d'erreur clair !
 
         # Launch the kernel

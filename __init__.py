@@ -1,21 +1,24 @@
-# 
-# 
-# 
-# 
+#
+#
+#
+#
 # Add current dirctory to Python Path
 import sys, os, importlib
+
 sys.path.append(os.path.dirname(__file__))
 os.environ["PYTHONPATH"] = os.path.dirname(__file__)
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 
 # Utils
+import re
 import bpy
 from bpy.utils import register_class, unregister_class
 from time import perf_counter
 
 # Import Addon files
-# Overwrite 
+# Overwrite
 import Blender_ui
+
 # import Simulation
 
 # Load the list of class used by the add-on
@@ -32,6 +35,21 @@ bl_info = {
     "warning": "",
     "category": "Physics",
 }
+
+frame_type = [
+    ("NOTE", "Note", "Do not have any impact on the node, act like a classical frame", 0),
+    ("LOOP", "Repeat", "Repeat the inner kernels (act like a for loop)", 1),
+    ("IF", "Condition", "Execute the inner kernels if the condition is respected (act like a if)", 2),
+]
+
+
+def update_ite(self, context):
+    r = re.findall("(.*) (ite: \d*)", self.label)
+    if r:
+        self.label = r[0][0] + " ite: " + str(self.ite)
+    else:
+        self.label = self.label + " ite: " + str(self.ite)
+
 
 ### Node Categories ###
 # Node categories are a python system for automatically
@@ -62,15 +80,9 @@ node_categories = [
             NodeItem("VectorParameterNode"),
             NodeItem("IntegerParameterNode"),
             NodeItem("TransformCombineNode"),
-        ]
+        ],
     ),
-    MajaxNodeCategory(
-        "OUTPUTS",
-        "Outputs Datas",
-        items=[
-            NodeItem("ExportGeoNode")
-        ]
-    ),
+    MajaxNodeCategory("OUTPUTS", "Outputs Datas", items=[NodeItem("ExportGeoNode")]),
     MajaxNodeCategory(
         "GPU",
         "Simulation Operators (GPU)",
@@ -80,32 +92,51 @@ node_categories = [
             NodeItem("KernelScriptNode"),
             NodeItem("KernelCopyNode"),
             NodeItem("KernelTestNode"),
+            NodeItem(
+                "NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}
+            ),
+            NodeItem(
+                "NodeFrame",
+                label="Condition",
+                settings={"operator": repr("IF"), "label": repr("Condition")},
+            ),
         ],
     ),
     MajaxNodeCategory(
         "CPU",
         "Post/Pre Processing Operators (CPU)",
         items=[
-            NodeItem("PythonScriptNode")
+            NodeItem("PythonScriptNode"),
+            NodeItem("NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}),
+            NodeItem("NodeFrame", label="Condition", settings={"operator": repr("IF"), "label": repr("Condition")}),
         ],
     ),
 ]
 
+# classes = (SimulationNodeTree, MyCustomSocket, MyCustomInterfaceSocket, MyCustomNode, SimInputNode)
+print("\nLodaing Blender classes:")
+print(*ui_class_list, sep="  |  ")
+print("")
+classes = [Blender_ui.__dict__[class_name] for class_name in ui_class_list]
+# custom_classes = [Simulation.__dict__[class_name] for class_name in sim_class_list]
+
+
 # Handlers function
 def stop_playback(scene):
-    if(scene.frame_current == scene.frame_end):
+    if scene.frame_current == scene.frame_end:
         bpy.ops.screen.animation_cancel(restore_frame=False)
 
+
 def step_forward(scene):
-    """ 
+    """
     Rules of computation according to frame change:
      - if we go to the next frame:     Compute one Simulation loop
      - if we go to the previous frame: Do nothing
      - if we jump to a father frame:   Reset the computation
      - if we compile and go to the next step: the computation is'nt init --> Faire l'init dans la compile ?
     """
-    t_start=perf_counter()
-    if not scene.majax_node_tree: # idem
+    t_start = perf_counter()
+    if not scene.majax_node_tree:  # idem
         return
     # Decide if computation have to be refresh:
     delta_frame = scene.frame_current - scene.frame_previous
@@ -114,7 +145,7 @@ def step_forward(scene):
     # Compute
     print("delta frame:", delta_frame)
     if delta_frame == 1:
-        # Compute one Simulation Loop and one post-process    
+        # Compute one Simulation Loop and one post-process
         t_1 = perf_counter()
         if not hasattr(scene.majax_node_tree, "calculator"):
             scene.majax_node_tree.compile()
@@ -144,39 +175,46 @@ def step_forward(scene):
     print("")
 
 
-# classes = (SimulationNodeTree, MyCustomSocket, MyCustomInterfaceSocket, MyCustomNode, SimInputNode)
-print("\nLodaing Blender classes:")
-print(*ui_class_list, sep="  |  ")
-print("")
-classes  = [Blender_ui.__dict__[class_name] for class_name in ui_class_list]
-# custom_classes = [Simulation.__dict__[class_name] for class_name in sim_class_list]
-
 def register():
     print("Register classes")
-    ### ADD Context Properties ### 
+    ### ADD Context Properties ###
     # bpy.types.ToolSettings.restart = bpy.props.BoolProperty(name="test property") # , description="Go to start frame when running the node graph", default=True)
-    ### Register Class ###  
+    ### Register Class ###
     for cls in classes:
         print("register: ", cls.__name__)
         register_class(cls)
 
-    ### Register node add menu ### 
+    ### Register node add menu ###
     nodeitems_utils.register_node_categories("CUSTOM_NODES", node_categories)
 
     ### Add scene property ###
-    bpy.types.Scene.majax_node_tree = bpy.props.PointerProperty(type=bpy.types.NodeTree, name="majax_node")
+    bpy.types.Scene.majax_node_tree = bpy.props.PointerProperty(
+        type=bpy.types.NodeTree, name="majax_node"
+    )
     bpy.types.Scene.frame_previous = bpy.props.IntProperty(name="p_frame", default=0)
 
-    ### Add other property ### 
-    bpy.types.NodeSocketVirtual.intent = bpy.props.StringProperty(name="intent")
+    ### Add other property ###
+    bpy.types.NodeFrame.operator = bpy.props.EnumProperty(
+        items=frame_type,
+        name="Operator",
+        description="Logical Operator to be executed on the inner operators",
+    )
+    bpy.types.NodeFrame.ite = bpy.props.IntProperty(
+        name="Iterations",
+        description="Number of type to repeate the inner operators",
+        default=0,
+        update=update_ite,
+    )
+    bpy.types.NodeFrame.expression = bpy.props.StringProperty(
+        name="", description="Expression needed for the frame operator", default=""
+    )
+    # bpy.types.NodeSocketVirtual.intent = bpy.props.StringProperty(name="intent")
 
     ### Add handlers
     # bpy.app.handlers.animation_playback_pre.append(pre_process)
     bpy.app.handlers.frame_change_pre.append(step_forward)
-    #TODO: Pas indispensable mais je ferais un parametre à coté du Run/Compile pour Loop ou pas la Timeline
-    # bpy.app.handlers.frame_change_post.append(stop_playback) 
-
-
+    # TODO: Pas indispensable mais je ferais un parametre à coté du Run/Compile pour Loop ou pas la Timeline
+    # bpy.app.handlers.frame_change_post.append(stop_playback)
 
 
 def unregister():
@@ -190,12 +228,17 @@ def unregister():
     ### Remove scene property
     del bpy.types.Scene.majax_node_tree
     del bpy.types.Scene.frame_previous
-    del bpy.types.NodeSocketVirtual.intent
+    del bpy.types.NodeFrame.operator
+    del bpy.types.NodeFrame.ite
+    del bpy.types.NodeFrame.expression
+    # del bpy.types.NodeSocketVirtual.intent
 
     ### Remove handlers
     # bpy.app.handlers.animation_playback_pre.remove(pre_process)
     try:
-        bpy.app.handlers.frame_change_pre.remove(bpy.app.handlers.frame_change_pre[0])   # WARN: may cause conflict with other add-on
+        bpy.app.handlers.frame_change_pre.remove(
+            bpy.app.handlers.frame_change_pre[0]
+        )  # WARN: may cause conflict with other add-on
         # bpy.app.handlers.frame_change_post.remove(bpy.app.handlers.frame_change_post[0]) # idem
     except:
         pass

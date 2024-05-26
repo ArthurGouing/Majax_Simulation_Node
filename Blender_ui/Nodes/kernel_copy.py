@@ -24,8 +24,6 @@ class KernelCopyNode(BaseNode, Node):
     # Operator reference that is associate with the node
     operator = "BlKernelCopyOperator"
     # Set Node Color
-    use_custom_color = True
-    color = Color((1, 0, 0))
 
     # === Properties ===
     buffer: EnumProperty(items=buffer_type, name="Buffer")
@@ -33,8 +31,8 @@ class KernelCopyNode(BaseNode, Node):
     wait: BoolProperty(name="Wait", default=False)
 
     def init(self, context):
-        use_custom_color = True
-        color = Color((1, 0, 0))
+        self.use_custom_color = True
+        self.color = Color((0.059, 0.082, 0.188))
 
         self.name = self.bl_label.replace(" ", "_")
         self.inputs.new('MajaxSocketBuffers', "Destination")

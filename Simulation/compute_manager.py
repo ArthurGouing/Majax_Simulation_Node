@@ -7,6 +7,7 @@ from bpy.types import Nodes, NodeLinks
 #### File Import ####
 from .data import Data
 from .operator import Operator, BlSimInputOperator, BlSimOutputOperator
+from .control_structure import ControlStructure, BlControlStructureLoop, BlControlStructureCondition
 
 from .pre_process import PreProcessing
 from .simulator import Simulator
@@ -31,6 +32,8 @@ class ComputeManager: # Client
         self.state = "Initialisation"
         # Store all the operations of the computation
         self.ops: dict[str, Operator] = dict()
+        # Store all controle structure of the computation (For loop, and conditions)
+        self.struct_ctrl: dict[str, ControlStructure] = dict()
         # Store all the datas of the computation
         self.args: dict[str, Data] = dict()
         # SubManager for computation before the simulation loop
@@ -45,14 +48,14 @@ class ComputeManager: # Client
         """ Change the inputs and operators according to the graphs. rebuild or change """
         self.state = "Updating graph"
         # Build operators and datas
-        self.ops, self.args = self.read_graph(bl_nodes, bl_links)
+        self.ops, self.struct_ctrl, self.args = self.read_graph(bl_nodes, bl_links)
 
         # Create simulator for each simulation loops
         self.simulators = list()
         for op in self.ops.values():
             if isinstance(op, BlSimInputOperator):
                 sim = Simulator(op) 
-                sim.order(self.ops, self.args)
+                sim.order(self.ops, self.struct_ctrl, self.args)
                 self.simulators.append(sim)
 
         # Build the list of operator to execute in the correct order for Pre processing ops
@@ -70,6 +73,7 @@ class ComputeManager: # Client
     def read_graph(self, bl_nodes: Nodes, bl_links: NodeLinks) -> tuple[dict[str, Operator], dict[str, Data]]:
         t_start = perf_counter()
         operators = dict()
+        control_structure = dict()
         datas = dict()
         simin_outputs = dict()
 
@@ -79,7 +83,16 @@ class ComputeManager: # Client
         # Build one operator for each node
         for node in bl_nodes:
             if node.type=='FRAME':
-                continue
+                if node.operator == 'LOOP':
+                    struct = BlControlStructureLoop(node)
+                    control_structure.update({struct.id_name: struct})
+                    continue
+                elif node.operator=='IF':
+                    struct = BlControlStructureCondition(node)
+                    control_structure.update({struct.id_name: struct})
+                    continue
+                else:
+                    continue
             # Create Operators
             for op_class in op_class_list:
                 if op_class.__name__==node.operator:
@@ -89,10 +102,22 @@ class ComputeManager: # Client
                     ordered_ops.append(operator.id_name)
                     oredered_node.append(node)
                     break
+        
+        # Build parent name for frame
+        for name, struct in control_structure.items():
+            parent_struct = control_structure.get(struct.parent, None)
+            if parent_struct:
+                parent_struct.append_name(name)
 
         # Build the data from 'out' sockets
         for op_name, node in zip(ordered_ops, oredered_node):
+            # Get the operator
             operator = operators[op_name]
+            # Store node parent information (for control structures)
+            if node.parent:
+                if node.parent.operator!='NOTE':
+                    control_structure[node.parent.name].append_name(op_name)
+                    operator.set_parent(node.parent.name)
             # Create output arguments and datas
             for socket in node.outputs:
                 if socket.bl_idname=="MajaxSocketBase" :
@@ -172,11 +197,13 @@ class ComputeManager: # Client
 
             # Reste le cas du lien entre le dernier kernel et le Simoutput
 
+        print("Control Structure:")
+        print(*control_structure.keys(), sep="\n")
 
         t_end = perf_counter()
         print(f"\nReading Graph time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
         print("")
-        return (operators, datas)
+        return (operators, control_structure, datas)
 
 
     def compile(self) -> None:

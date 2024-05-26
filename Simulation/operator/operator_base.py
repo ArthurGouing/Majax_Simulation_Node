@@ -20,6 +20,11 @@ class Operator(ABC):
         self.inputs: list[Argument] = list()
         # Oredered List of data writtent to output
         self.outputs: list[Argument] = list()
+        # Controle Structure id_name where the operator live in
+        self.parent: str = ""
+
+    def set_parent(self, parent_name: str) -> None:
+        self.parent = parent_name
 
     def add_input(self, socket: NodeSocket, intent: str, id_data: str, from_arg:str =None):
         self.inputs.append(Argument(socket, intent, id_data, from_arg))
@@ -51,5 +56,5 @@ class Operator(ABC):
                 return out
 
     @abstractmethod
-    def compute(self, *args: Data) -> None:
+    def compute(self, data: dict[str, Data]) -> None:
         pass

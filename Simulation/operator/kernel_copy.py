@@ -46,8 +46,8 @@ class KernelCopyOperator(Operator):
         pass
 
     def compute(self, queue: cl.CommandQueue, buffers: dict[Data]) -> None:
-        src = buffers["Source"].data.buffers[self.buffer_name]
-        dest = buffers["Destination"].data.buffers[self.buffer_name]
+        src = buffers[self.inputs[1].data].data.buffers[self.buffer_name]
+        dest = buffers[self.inputs[0].data].data.buffers[self.buffer_name]
         event = cl.enqueue_copy(queue, dest, src)
         if self.wait_for:
             event.wait()
