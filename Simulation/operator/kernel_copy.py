@@ -21,7 +21,7 @@ from Simulation.data.buffer import OpenCLBuffers
 # eq to 1 with customsourcefile, and the source file path is contained in Nodeupdate or whatever
 
 class KernelCopyOperator(Operator):
-    def __init__(self, name: str, wait: bool, buffer_type: str, var_name: str) -> None:
+    def __init__(self, name: str, wait: bool, from_point: bool,buffer_type: str, var_name: str) -> None:
         super().__init__(name)
         self.name = name
         self.wait_for = wait
@@ -40,13 +40,17 @@ class KernelCopyOperator(Operator):
         else:
             # TODO: 
             print("Error")
+        if from_point:
+            self.buffer_name_src = "points"
+        else:
+            self.buffer_name_src = self.buffer_name
         
         
     def compile(self, context, options: str | list[str]=list()) -> str:
         pass
 
     def compute(self, queue: cl.CommandQueue, buffers: dict[Data]) -> None:
-        src = buffers[self.inputs[1].data].data.buffers[self.buffer_name]
+        src = buffers[self.inputs[1].data].data.buffers[self.buffer_name_src]
         dest = buffers[self.inputs[0].data].data.buffers[self.buffer_name]
         event = cl.enqueue_copy(queue, dest, src)
         if self.wait_for:
@@ -60,4 +64,4 @@ class KernelCopyOperator(Operator):
 class BlKernelCopyOperator(KernelCopyOperator):
     """Blender wrapper to provide Blender compatible constructor"""
     def __init__(self, node: Node) -> None:
-        super().__init__(node.name, node.wait, node.buffer, node.var_name)
+        super().__init__(node.name, node.wait, node.from_point, node.buffer, node.var_name)

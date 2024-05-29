@@ -5,7 +5,7 @@
 import numpy as np
 
 class Variable():
-    def __init__(self, value, uniform: bool, stationary: bool=True) -> None:
+    def __init__(self, value, uniform: bool, stationary: bool=True, dtype: np.dtype=None) -> None:
 
         # Bool to tell if a Buffer has to be created on the GPU
         self.uniform: bool = uniform
@@ -27,3 +27,6 @@ class Variable():
                 self.value = value.astype(np.int32)
             else:
                 self.value = value
+        
+        if dtype:
+            self.value = self.value.astype(dtype)

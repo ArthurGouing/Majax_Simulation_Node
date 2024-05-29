@@ -29,6 +29,7 @@ class KernelCopyNode(BaseNode, Node):
     buffer: EnumProperty(items=buffer_type, name="Buffer")
     var_name: StringProperty(name="Var name")
     wait: BoolProperty(name="Wait", default=False)
+    from_point: BoolProperty(name="From points", default=False)
 
     def init(self, context):
         self.use_custom_color = True
@@ -54,6 +55,7 @@ class KernelCopyNode(BaseNode, Node):
             layout.prop(self, "var_name")
         row = layout.row()
         row.prop(self, "wait")
+        row.prop(self, "from_point")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
@@ -62,3 +64,4 @@ class KernelCopyNode(BaseNode, Node):
             layout.prop(self, "var_name")
         row = layout.row()
         row.prop(self, "wait")
+        row.prop(self, "from_point")

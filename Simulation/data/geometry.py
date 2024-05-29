@@ -62,7 +62,7 @@ Groupe = list[int]
 
 class Geometry:
 
-    def __init__(self, points: list[list[float]] = None, primitives: list[list[int]] = None) -> None:
+    def __init__(self, points: list[list[float]] = None, primitives: list[list[int]] = None, dtype: np.dtype = np.single) -> None:
         """Initialize the Geometry with eventual points and primitives values"""
         # List of all points and primitives of the geometry. The base data to represent a geometry
         # self.points:     list[Point] = list()
@@ -74,8 +74,10 @@ class Geometry:
         self.variables_prim: dict[str, Variable] = dict()
         # List of point indices to create a group of the geometry
         self.groups: dict[str, Groupe] = dict()
+        # dtype
+        self.dtype = dtype
         if points:
-            self.points = np.array(points, dtype=np.float32)  # TODO: option to choose precision
+            self.points = np.array(points, dtype=dtype)
             if primitives:  # Primitive can existe only if points exist
                 # self.prim_len = type_len[len(primitives[0])]
                 self.primitives = np.array(primitives, dtype=np.int32)
@@ -120,7 +122,7 @@ class Geometry:
         self.primitives = np.concatenate(self.primitives, geo.primitives)  # axis=0
         return self
 
-    def __getitem__(self, item) -> np.ndarray[float]:
+    def __getitem__(self, item) -> np.ndarray[np.single|np.double]:
         """Get the point i"""
         return self.points[item]
 

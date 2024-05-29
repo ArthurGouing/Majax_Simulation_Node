@@ -74,7 +74,7 @@ class OpenCLKernelOperator(Operator):
 
             # Read the arguments
             if not start_read_arg:
-                r = re.search("kernel\s*void.*\(", line)
+                r = re.search("kernel\s*void\s*\w*\s*\(", line)
                 if r:
                     start_read_arg = True
                     line = line[r.span()[1]:] # on suprime tout ce qu'il y a avant le "("
@@ -84,13 +84,14 @@ class OpenCLKernelOperator(Operator):
 
     def read_argument(self, line: str, arg_id: int) -> int: # return the arg_id
         """ Extract the name and usefull type information from kernel argument definition ('float *<name>' like string)"""
+        line = line.split("//")[0]
         arguments: str = line.split(",") # TODO: on peut faire un allfind au lieux de pré split
 
         for str_arg in arguments:
             # Buffer case
             # str_arg = (global|local|...) (float|int|...) name
-            r = re.findall("\s*(\w*)?\s*(\w*)\s*(\*)?(\w*)", str_arg) 
-            if r[0][3]:
+            r = re.findall("\s*(\w*)\s*(\w+)\s*(\*)(\w+)", str_arg) 
+            if r:
                 arg_name = r[0][3]
                 name = self.alias.get(arg_name, arg_name)
                 split = name.split("_")
@@ -98,20 +99,23 @@ class OpenCLKernelOperator(Operator):
                 buffer_name = "_".join(split[1:])
                 arg_info = {"name": name}
                 arg_info.update({"type": "buffer"})
-                data_id = [arg.data for arg in sum([self.inputs, self.outputs], []) if arg.name== object_name][0] #TODO: some security here
+                data_id_list = [arg.data for arg in sum([self.inputs, self.outputs], []) if arg.name== object_name]
+                if not data_id_list:
+                    print(f"Error: '{object_name}' not finded in {[arg.name for arg in sum([self.inputs, self.outputs], [])]} while processing {str_arg}")
+                data_id = data_id_list[0]
                 arg_info.update({"data_id": data_id})
                 arg_info.update({"buffer": buffer_name})
-                arg_info.update({"object": object_name}) # useless now
                 self.ker_argument_name.update({arg_id: arg_info})
                 arg_id+=1
                 continue
-            else:
-                continue
-                arg_name = r[0][3]
+
+            r = re.findall("\s*(\w+)\s*(\*)?(\w+)", str_arg) 
+            if r:
+                arg_name = r[0][2]
                 name = self.alias.get(arg_name, arg_name)
                 arg_info = {"name": name}
+                arg_info.update({"data_id": name})
                 arg_info.update({"type": "numpy"})
-                arg_info.update({"object": name})
                 self.ker_argument_name.update({arg_id: arg_info})
                 arg_id+=1
                 continue
@@ -131,8 +135,8 @@ class OpenCLKernelOperator(Operator):
         # Il faudrait que buffers contienne tous les buffers indiférement du OpenCLBuffer class
         # le buffer[name].data c'est le cl.Buffer
         for id, arg_info in self.ker_argument_name.items():
-            object_name = arg_info["object"]
             data_name = arg_info["data_id"]
+            # print(f"add {object_name} {arg_info.get('buffer', '')} to {id}")
             if arg_info["type"]=="buffer":
                 buffer_name = arg_info["buffer"]
                 data = buffers[data_name].data.buffers[buffer_name]
@@ -140,7 +144,6 @@ class OpenCLKernelOperator(Operator):
             elif arg_info["type"]=="numpy":
                 data = buffers[data_name].data
                 self.kernel.set_arg(id, data)
-                print(f"add {object_name} to {id}")
         # TODO: des msg d'erreur clair !
 
         # Launch the kernel
@@ -171,6 +174,10 @@ class OpenCLKernelOperator(Operator):
 class BlOpenCLKernelOperator(OpenCLKernelOperator):
     """Blender wrapper to provide Blender compatible constructor"""
     def __init__(self, node: Node) -> None:
-        src = node.script.as_string() if node.script is not None else ""
+        if node.from_file:
+            with open(node.script.filepath, 'r') as f:
+                src = f.read()
+        else:
+            src = node.script.as_string() if node.script is not None else ""
         expr = node.work_group_expr if node.work_group_size=='CUSTOM' else None
         super().__init__(node.name, src, node.work_group_size, node.wait, expr)

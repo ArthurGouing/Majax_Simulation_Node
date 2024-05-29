@@ -1,6 +1,6 @@
 # Import the selected object as a Geometry type
 from bpy.types import Node, Object
-from bpy.props import PointerProperty, StringProperty, EnumProperty
+from bpy.props import PointerProperty, StringProperty, EnumProperty, BoolProperty
 
 from .base_node import BaseNode
 
@@ -31,6 +31,8 @@ class ImportGeoNode(BaseNode, Node):
     geo_options: EnumProperty(items=enum_prim, name="Options")
     geo_name: StringProperty(name="Geometry name", description="Name of the geometry created from object (by default, the name of the object)", default="Geometry", update=geo_name_update)
 
+    double: BoolProperty(name="Use double", description="Use double precision float for computation", default=False)
+
     def init(self, context):
         self.name = self.bl_label.replace(" ", "_")
         self.outputs.new("MajaxSocketGeometry", "Geometry")
@@ -43,10 +45,14 @@ class ImportGeoNode(BaseNode, Node):
     def draw_buttons(self, context, layout):
         layout.prop(self, "obj")
         layout.prop(self, "geo_options")
+        row = layout.row()
+        row.prop(self, "double")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
         layout.prop(self, "obj")
         layout.prop(self, "geo_options")
+        row = layout.row()
+        row.prop(self, "double")
         layout.separator()
         layout.prop(self, "geo_name")

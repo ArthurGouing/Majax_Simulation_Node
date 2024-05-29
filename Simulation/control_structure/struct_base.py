@@ -1,6 +1,8 @@
 #### import ####
 from Simulation import Operator, Data, OpenCLQueue
 from abc import ABC, abstractmethod
+import re
+import numpy as np
 
 class ControlStructure(ABC):
 
@@ -27,6 +29,7 @@ class ControlStructure(ABC):
 
 class BlControlStructureLoop(ControlStructure):
     def __init__(self, node) -> None:
+        self.name = re.search("(.*) ite: \d*", node.label).group(1)
         self.ite = node.ite
         if node.parent:
             parent = node.parent.name
@@ -35,8 +38,10 @@ class BlControlStructureLoop(ControlStructure):
         super().__init__(node.name, parent)
 
     def compute(self,queue: OpenCLQueue, datas: dict[str, Data]) -> None:
+        # datas.update({self.name: PseudoData(np.int32(0))}) # TODO: Done at each subite. Create in in the read_graph like other datas
         for i in range(self.ite):
             for op in self.childs:
+                # datas[self.name].data = np.int32(i)
                 op.compute(queue, datas)
 
 
@@ -60,3 +65,9 @@ class BlControlStructureCondition(ControlStructure):
         if execute:
             for op in self.childs:
                 op.compute(queue, datas)
+
+class PseudoData():
+    def __init__(self, value: np.integer) -> None:
+        self.data_type = "int"
+        self.data = value
+        pass

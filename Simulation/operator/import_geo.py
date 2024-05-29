@@ -1,6 +1,7 @@
 # Read data object from Blenderfile and convert them to Geometry data type
 
 #### Library Import #### 
+import numpy as np
 
 #### Blender Import #### 
 import bpy
@@ -17,6 +18,7 @@ class BlImportGeoOperator(Operator):
         super().__init__(node.name)
         self.prim_type = node.geo_options
         self.obj = node.obj
+        self.use_double = node.double
 
 
     def compute(self, *args: Data) -> None:
@@ -41,4 +43,5 @@ class BlImportGeoOperator(Operator):
         # TODO: add option for read thetrahedreon primitives
 
         # Store Geometry
-        args[0].data = Geometry(points, prims)
+        dtype = np.double if self.use_double else np.single
+        args[0].data = Geometry(points, prims, dtype)

@@ -25,7 +25,9 @@ class KernelScriptNode(BaseNode, Node):
     # work_group_size: IntProperty(default=256, min=0, name="Kernel size")
     work_group_size: EnumProperty(items=work_size_method, name="Kernel size", description="Choose the method used to determine the size of the computation grid.")
     work_group_expr: StringProperty(name="", default="(len(point_size))")
+
     wait: BoolProperty(name="Wait", default=False)
+    from_file: BoolProperty(name="Read file", default=True)
 
     def init(self, context):
         self.use_custom_color = True
@@ -79,6 +81,7 @@ class KernelScriptNode(BaseNode, Node):
         if self.work_group_size == 'CUSTOM':
             layout.prop(self, "work_group_expr")
         row = layout.row()
+        row.prop(self, "from_file")
         row.prop(self, "wait")
 
     # Properties interface on the sidebar.
@@ -91,6 +94,7 @@ class KernelScriptNode(BaseNode, Node):
         if self.work_group_size == 'CUSTOM':
             layout.prop(self, "work_group_expr")
         row = layout.row()
+        row.prop(self, "from_file")
         row.prop(self, "wait")
         layout.label(text="Inputs: ")
         for inp in self.inputs:
