@@ -1,9 +1,16 @@
-#### Library import #### 
-from itertools import zip_longest
+#################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
 
+#### Blender Import #### 
 from bpy.types import NodeTree, Node
+
+#### Local Import ####
 from Simulation import ComputeManager
-####from Simulation import ComputationGraph
 from .Socket import MajaxSocketGeometry, MajaxSocketBuffers
 from .Nodes import SimOutputNode, SimInputNode
 

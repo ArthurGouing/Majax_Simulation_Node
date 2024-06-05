@@ -243,18 +243,18 @@ class ComputeManager: # Client
     def step_forward(self):
         # loop simulation on substep
         # Kernel computation
-        t_start = perf_counter()
+        # t_start = perf_counter()
         [sim.compute(self.args) for sim in self.simulators]
-        t_end = perf_counter()
-        print(f"\nGPU Loop Computation time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
-        print("")
+        # t_end = perf_counter()
+        # print(f"\nGPU Loop Computation time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        # print("")
 
         # Transfer data back on the CPU
-        t_start = perf_counter()
+        # t_start = perf_counter()
         [sim.end_frame(self.args) for sim in self.simulators]
-        t_end = perf_counter()
-        print(f"\nPost Process +  time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
-        print("")
+        # t_end = perf_counter()
+        # print(f"\nPost Process +  time: {(t_end-t_start)*1000:.3f} ms ({t_end-t_start:f} s)")
+        # print("")
 
     def update_computed_data(self):
         # Computation after simulation loop

@@ -1,30 +1,49 @@
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# Majax is a Blender Add-on which allow GPU computation
+# for simulation into Blender. Majax is delivered under
+# GNU General Public Liscense.
 #
+# This license grants you a number of freedoms:
+#   * You are free to use it, for any purpose
+#   * You are free to distribute it
+#   * You can study how Majax works and change it
+#   * You can distribute changed versions of Majax.
+# The GPL strictly aims at protecting these freedoms,
+# requiring everyone to share their modifications when they
+# also share the software in public. Please be advised that
+# you are not allowed to owning, registering copyright and
+# earning royalties from copyright.
 #
+# By using or distributing this work, you agree to respect
+# these moral rights and acknowledge that any violation of
+# these rights may result in legal action. For any questions
+# or requests related to the use of this work, please
+# contact me directly at arthur.gouinguenet@free.fr
 #
-#
-# Add current dirctory to Python Path
-import sys, os, importlib
+#############################################################
+#### Library Import ####
+import sys, os, re
+from time import perf_counter
 
+#### Blender Import #### 
+import bpy
+from bpy.utils import register_class, unregister_class
+
+#### Local Import ####
+import Blender_ui
+
+
+
+# Set global variables
 sys.path.append(os.path.dirname(__file__))
 os.environ["PYTHONPATH"] = os.path.dirname(__file__)
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
 
-# Utils
-import re
-import bpy
-from bpy.utils import register_class, unregister_class
-from time import perf_counter
-
-# Import Addon files
-# Overwrite
-import Blender_ui
-
-# import Simulation
-
-# Load the list of class used by the add-on
-# sim_class_list = Simulation.__all__
 ui_class_list = Blender_ui.__all__
 
+
+# Addon informations
 bl_info = {
     "name": "Majax Node",
     "author": "Arthos",
@@ -107,8 +126,14 @@ node_categories = [
         "Post/Pre Processing Operators (CPU)",
         items=[
             NodeItem("PythonScriptNode"),
-            NodeItem("NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}),
-            NodeItem("NodeFrame", label="Condition", settings={"operator": repr("IF"), "label": repr("Condition")}),
+            NodeItem(
+                "NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}
+            ),
+            NodeItem(
+                "NodeFrame",
+                label="Condition",
+                settings={"operator": repr("IF"), "label": repr("Condition")},
+            ),
         ],
     ),
 ]

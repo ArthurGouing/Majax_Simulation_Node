@@ -164,7 +164,6 @@ class OpenCLKernelOperator(Operator):
             self.worksize = (prim_shape[0],)
         elif self.worksize_method=='CUSTOM':
             self.worksize = eval(self.worksize_expr)
-        print("Compute worksize: ", self.worksize)
 
 
     def delete(self) -> None:
