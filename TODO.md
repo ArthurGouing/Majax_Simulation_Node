@@ -1,3 +1,7 @@
+# Ordered task
+1. Add Create empty attribute node
+2. Incorpore local work size option and change global work size to have 3 int places
+
 # Road map
 - Create float, veector, rotation, transform data socket, and create node
 - Make a PBD kernel or VBD kernel

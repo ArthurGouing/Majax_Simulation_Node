@@ -24,7 +24,7 @@ class KernelScriptNode(BaseNode, Node):
     script: PointerProperty(type=bpy.types.Text, name="Script")
     # work_group_size: IntProperty(default=256, min=0, name="Kernel size")
     work_group_size: EnumProperty(items=work_size_method, name="Kernel size", description="Choose the method used to determine the size of the computation grid.")
-    work_group_expr: StringProperty(name="", default="(len(point_size))")
+    work_group_expr: StringProperty(name="", default="(point_shape[0],)")
 
     wait: BoolProperty(name="Wait", default=False)
     from_file: BoolProperty(name="Read file", default=True)

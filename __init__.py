@@ -23,22 +23,30 @@
 #
 #############################################################
 #### Library Import ####
-import sys, os, re
+import sys, os, re, shutil
 from time import perf_counter
 
 #### Blender Import #### 
 import bpy
 from bpy.utils import register_class, unregister_class
 
-#### Local Import ####
-import Blender_ui
-
-
-
 # Set global variables
 sys.path.append(os.path.dirname(__file__))
 os.environ["PYTHONPATH"] = os.path.dirname(__file__)
 os.environ["PYOPENCL_COMPILER_OUTPUT"] = "1"
+# Copy templates file into Blender location
+# get environnement variable Blender Path
+pwd = os.getcwd()
+print(pwd)
+
+bpy_path = bpy.__path__[0]
+script_path = os.path.abspath(os.path.join(os.path.join(bpy_path, os.pardir), os.pardir))
+
+
+#### Local Import ####
+import Blender_ui
+
+
 
 ui_class_list = Blender_ui.__all__
 
@@ -204,6 +212,13 @@ def register():
     print("Register classes")
     ### ADD Context Properties ###
     # bpy.types.ToolSettings.restart = bpy.props.BoolProperty(name="test property") # , description="Go to start frame when running the node graph", default=True)
+    
+    ### Install template files ###
+    print("Move templates:")
+    print(script_path, script_path+"/template_cl/")
+    if not os.path.isdir(script_path+"/templates_cl/"):
+        shutil.copytree("./Templates", script_path+"/templates_cl/")
+
     ### Register Class ###
     for cls in classes:
         print("register: ", cls.__name__)
