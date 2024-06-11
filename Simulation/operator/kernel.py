@@ -1,8 +1,15 @@
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+
 #### Library Import #### 
-import numpy as np
 import re
 import pyopencl as cl
-from time import perf_counter
 
 #### Blender Import #### 
 from bpy.types import Node
@@ -155,8 +162,9 @@ class OpenCLKernelOperator(Operator):
         # Correct previous design error TODO:
         point_size = buffer.point_size
         point_shape = buffer.point_shape
-        prim_size = buffer.prim_size
-        prim_shape = buffer.prim_shape
+        if buffer.prim_size:
+            prim_size = buffer.prim_size
+            prim_shape = buffer.prim_shape
 
         if self.worksize_method=='POINT':
             self.worksize = (point_shape[0],)

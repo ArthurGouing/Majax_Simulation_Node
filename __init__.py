@@ -25,10 +25,12 @@
 #### Library Import ####
 import sys, os, re, shutil
 from time import perf_counter
+from mathutils import Color
 
 #### Blender Import #### 
 import bpy
 from bpy.utils import register_class, unregister_class
+from bpy.app.handlers import persistent
 
 # Set global variables
 sys.path.append(os.path.dirname(__file__))
@@ -120,12 +122,12 @@ node_categories = [
             NodeItem("KernelCopyNode"),
             NodeItem("KernelTestNode"),
             NodeItem(
-                "NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}
-            ),
+                "NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}),
+            #                                            "use_custom_color": repr(True),
+            #                                            "color": repr(Color((0.188,0.059,0.136)))}
+            # ),
             NodeItem(
-                "NodeFrame",
-                label="Condition",
-                settings={"operator": repr("IF"), "label": repr("Condition")},
+                "NodeFrame", label="Condition", settings={"operator": repr("IF"), "label": repr("Condition")},
             ),
         ],
     ),
@@ -134,12 +136,12 @@ node_categories = [
         "Post/Pre Processing Operators (CPU)",
         items=[
             NodeItem("PythonScriptNode"),
+            NodeItem("CreateAttributeNode"),
             NodeItem(
                 "NodeFrame", label="Repeat", settings={"operator": repr("LOOP"), "label": repr("Repeat")}
             ),
             NodeItem(
-                "NodeFrame",
-                label="Condition",
+                "NodeFrame", label="Condition",
                 settings={"operator": repr("IF"), "label": repr("Condition")},
             ),
         ],
@@ -159,7 +161,7 @@ def stop_playback(scene):
     if scene.frame_current == scene.frame_end:
         bpy.ops.screen.animation_cancel(restore_frame=False)
 
-
+@persistent
 def step_forward(scene):
     """
     Rules of computation according to frame change:
@@ -224,6 +226,9 @@ def register():
         print("register: ", cls.__name__)
         register_class(cls)
 
+    ### Add handlers
+    bpy.app.handlers.frame_change_pre.append(step_forward)
+
     ### Register node add menu ###
     nodeitems_utils.register_node_categories("CUSTOM_NODES", node_categories)
 
@@ -248,13 +253,7 @@ def register():
     bpy.types.NodeFrame.expression = bpy.props.StringProperty(
         name="", description="Expression needed for the frame operator", default=""
     )
-    # bpy.types.NodeSocketVirtual.intent = bpy.props.StringProperty(name="intent")
-
-    ### Add handlers
-    # bpy.app.handlers.animation_playback_pre.append(pre_process)
-    bpy.app.handlers.frame_change_pre.append(step_forward)
     # TODO: Pas indispensable mais je ferais un parametre à coté du Run/Compile pour Loop ou pas la Timeline
-    # bpy.app.handlers.frame_change_post.append(stop_playback)
 
 
 def unregister():

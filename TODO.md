@@ -1,10 +1,10 @@
 # Ordered task
-1. Add Create empty attribute node
-2. Incorpore local work size option and change global work size to have 3 int places
+0. Deprecated prim_variable ? 
+2. Incorpore local work size option and change global work size to have 3 int places in kernel operators
+3. Test local memory OpenCL on dummy example
 
 # Road map
-- Create float, veector, rotation, transform data socket, and create node
-- Make a PBD kernel or VBD kernel
+- Improve VBD with local memory and smaller granularity
 - Make a detection collision kernel and add constraints(=primitives)
 - Make the possibility to use mutliple GPU throught 2 SimInput/Output
 - Make the possiblity to use automatically on multiple GPU through 1 SimInput/Output (for batch computation)
@@ -14,8 +14,10 @@
 - Bug OpenCL, les numpy data qui sont fournis au kernel ne peuvent pas être modifier, et ne peuvent donc pas être de type inout (potentiellement problematique). (il suffit de les passer en pointer -> toutes les possibilités OpenCL ne sont exploitable à travers Blender)
 - Il faut encore test les geometry.groups. Mais je suis pas sur qu'il soit utilisable efficacement sur GPU ?
 - Object cannot be deleted as they are used in my MajaxGraph. Need to explore why, and how to overcome it.
+- Rename l'input socket qui est 'inout', ne rename pas l'output, il faut faire des manips pour retomber sur ces pattes
 
 # Improvement
+- copy kerenel more general (i.e. able to choose src_buffer and dest_buffer from Geometry-buffers)
 - For overight python class, make a proper unregister where I reset the base class.
 - Prendre en compte le muted lorsque l'on construit les graphes.
 - Faire une Loop ou un repeat. et/ou des conditions d'execution de kernel !
@@ -30,3 +32,4 @@
 - Add MPI operation to allow communication betewwen the Simulation loop
 - Make the computation of 1 Simulation loop on multiple Accelerator(GPU or CPU) with MPI
 - Lors de la création des parameters node. Pouvoir choisir les unités ! Pour faire ca il faut un enumtypeproperty ou l'on choisit l'unité. Une fois choisis, il faut delete l'ancienne props, et la recréer avec la bonne unit, en lui réassignant les bonnes values.
+- Add the possiblity to create parameter struct to be used in openCl into throught Geometry attribute

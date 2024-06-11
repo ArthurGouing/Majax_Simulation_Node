@@ -1,11 +1,23 @@
-# A simple copy Kernel:
-# Need 1 GPU_buffer source, 1 GPU_buffer destination, renvoie le GPU_buffer destinationk
-# Copy les data de la source vers la destination
-from .base_node import BaseNode
-from bpy.types import Node
-from bpy.props import EnumProperty, StringProperty, BoolProperty
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+
+#### Library Import ####
 from mathutils import Color
 
+#### Blender Import ####
+from bpy.types import Node
+from bpy.props import EnumProperty, StringProperty, BoolProperty
+
+#### Intern File Import ####
+from .base_node import BaseNode
+
+# Enum item
 buffer_type = [
     ('POINT', "Points", "Copy only the buffer which contain the points data", 0),
     ('PRIM', "Primitives", "Copy only the buffer which contain the primitives data", 1),
@@ -14,7 +26,8 @@ buffer_type = [
     ('GROUP', "Group", "Copy the buffer which containt the group data", 4)
 ]
 
-# Make automatique construction of the enum_list from OpenCL device
+
+
 class KernelCopyNode(BaseNode, Node):
     '''Copy the value of the source buffers to the destination buffer'''
     # Optional identifier string.
@@ -23,7 +36,6 @@ class KernelCopyNode(BaseNode, Node):
     bl_label = "Kernel Copy"
     # Operator reference that is associate with the node
     operator = "BlKernelCopyOperator"
-    # Set Node Color
 
     # === Properties ===
     buffer: EnumProperty(items=buffer_type, name="Buffer")
@@ -32,20 +44,23 @@ class KernelCopyNode(BaseNode, Node):
     from_point: BoolProperty(name="From points", default=False)
 
     def init(self, context):
+        # Set name and color
+        self.name = self.bl_label.replace(" ", "_")
         self.use_custom_color = True
         self.color = Color((0.059, 0.082, 0.188))
 
-        self.name = self.bl_label.replace(" ", "_")
+        # Inputs
         self.inputs.new('MajaxSocketBuffers', "Destination")
         self.inputs[-1].intent = "inout"
         self.inputs.new("MajaxSocketBuffers", "Source")
         self.inputs[-1].intent = "in"
 
+        # Outputs
         self.outputs.new('MajaxSocketBuffers', "Destination")
         self.outputs[-1].intent = "inout"
 
+    # Update Node when a link is modified or a node is added/deleted
     def update(self):
-        """Executed when a new link is made. Delete Unconnected virtual socket"""
         pass
 
     # Properterties edition on the node.

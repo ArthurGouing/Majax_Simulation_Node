@@ -25,8 +25,6 @@ class OpenCLBuffers:
     def init_from_geo(self, geo: Geometry) -> None:
         mf = cl.mem_flags
 
-        # Get geo adress i.e. data_id_name ???
-
         self.point_shape = geo.points.shape
         self.point_size = geo.points.size
         buffer_point = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=geo.points)

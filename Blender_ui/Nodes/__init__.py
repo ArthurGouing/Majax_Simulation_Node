@@ -13,6 +13,7 @@ from .float_parameter_node import FloatParameterNode
 from .vector_parameter import VectorParameterNode
 from .transform_combine import TransformCombineNode
 from .kernel_copy import KernelCopyNode
+from .new_attribute import CreateAttributeNode
 
 # Déclaration des éléments à exposer lors de l'importation du package
 __all__ = ['SimInputNode',
@@ -27,4 +28,5 @@ __all__ = ['SimInputNode',
            'VectorParameterNode',
            'TransformCombineNode',
            'KernelCopyNode',
+           'CreateAttributeNode',
            ]

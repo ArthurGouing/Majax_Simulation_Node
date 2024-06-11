@@ -1,8 +1,18 @@
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+
 #### Import Blender ####
 from bpy.types import Node
+from bpy.props import FloatProperty 
+
 #### Import Intern File ####
 from .base_node import BaseNode
-from bpy.props import StringProperty, FloatProperty 
 
 
 
@@ -23,8 +33,8 @@ class FloatParameterNode(BaseNode, Node):
         self.outputs.new("MajaxSocketFloat", "Float")
         self.outputs[-1].intent = "out"
 
+    # Update Node when a link is modified or a node is added/deleted
     def update(self):
-        print("update float parameter node")
         pass
 
     # Properterties edition on the node.

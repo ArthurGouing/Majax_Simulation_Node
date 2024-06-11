@@ -220,7 +220,7 @@ class ComputeManager: # Client
 
     def init_compute(self, n_frame: int = None) -> None:
         """ Realise the computation """
-        print("Init computation")
+        print("  --- Init computation ---")
         # Init
         # If OpenCL Kernel aren't compile, Compile all kernels i.e. all operator in the simulator
 
@@ -242,6 +242,7 @@ class ComputeManager: # Client
         # while frame <= n_frame:
     def step_forward(self):
         # loop simulation on substep
+        print("  --- Compute simulation loop ---")
         # Kernel computation
         # t_start = perf_counter()
         [sim.compute(self.args) for sim in self.simulators]
@@ -250,6 +251,7 @@ class ComputeManager: # Client
         # print("")
 
         # Transfer data back on the CPU
+        print("  --- Send data back to GPU ---")
         # t_start = perf_counter()
         [sim.end_frame(self.args) for sim in self.simulators]
         # t_end = perf_counter()
@@ -258,6 +260,7 @@ class ComputeManager: # Client
 
     def update_computed_data(self):
         # Computation after simulation loop
+        print("  --- Overwrite Object data ---")
         self.post_process.compute(self.args)
 
         # End simulators
