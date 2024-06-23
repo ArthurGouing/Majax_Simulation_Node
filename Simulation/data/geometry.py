@@ -70,8 +70,7 @@ class Geometry:
         # self.primitives: list[Prim]  = list()
         self.primitives: np.ndarray[int, int] = np.array([])
         # List of variables attached to the geometry (can be non uniform variable)
-        self.variables_point: dict[str, Variable] = dict()
-        self.variables_prim: dict[str, Variable] = dict()
+        self.variables: dict[str, Variable] = dict()
         # List of point indices to create a group of the geometry
         self.groups: dict[str, Groupe] = dict()
         # dtype
@@ -92,25 +91,17 @@ class Geometry:
         prim = np.array(prim.indices)
         np.append(self.primitives, [prim])
 
-    def update_variable_point(self, name: str, var: Variable) -> None:
+    def update_variable(self, name: str, var: Variable) -> None:
         """Create or update variable on points"""
-        self.variables_point.update({name: var})
-
-    def update_variable_prim(self, name: str, var: Variable) -> None:
-        """Create or update variable on primitives"""
-        self.variables_prim.update({name: var})
+        self.variables.update({name: var})
 
     def add_group(self, group: Groupe) -> None:
         """Add a groupe to the geometry"""
         self.groups.append(group)
 
-    def delete_variable_point(self, name: str) -> None:
+    def delete_variable(self, name: str) -> None:
         """Delete the name variable"""
-        self.variables_point.pop(name)
-
-    def delete_variable_primitives(self, name: str) -> None:
-        """Delete the name variable"""
-        self.variables_prim.pop(name)
+        self.variables.pop(name)
 
     def delete_group(self, name: str) -> None:
         """Delete the group named name"""

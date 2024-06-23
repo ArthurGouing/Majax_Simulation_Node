@@ -61,7 +61,8 @@ class CreateAttributeNode(BaseNode, Node):
     )
     is_vec: BoolProperty(name="Is vector", description="Can have multiple value for each elements")
     size: StringProperty(name="Size", description="Size of the vecteur field")
-    use_double: BoolProperty(name="Use double", description="To use float64 in the numpy arrays")
+    use_double: BoolProperty(name="Use double", description="To use float64 in the numpy arrays. (Currently not supported on Kernels)")
+    is_local_memory: BoolProperty(name="Use Local Memory", description="Must be True to use the buffer as a local memomry in the OpenCL Kernels.")
 
     def init(self, context):
         # Set name and color
@@ -95,6 +96,7 @@ class CreateAttributeNode(BaseNode, Node):
         if self.is_vec:
             row.prop(self, "size")
         layout.prop(self, "use_double")
+        layout.prop(self, "is_local_memory")
 
     # Properties interface on the sidebar.
     def draw_buttons_ext(self, context, layout):
@@ -112,3 +114,4 @@ class CreateAttributeNode(BaseNode, Node):
         if self.is_vec:
             row.prop(self, "size")
         layout.prop(self, "use_double")
+        layout.prop(self, "is_local_memory")

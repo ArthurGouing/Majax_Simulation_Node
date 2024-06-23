@@ -1,7 +1,17 @@
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+#### Library Import ####
 from typing import Optional
 import numpy as np
 import pyopencl as cl
 
+#### Local Import #### 
 from .operator.kernel import OpenCLKernelOperator
 from .queue_gpu import OpenCLQueue
 from .data.buffer import OpenCLBuffers
@@ -16,18 +26,6 @@ Queue = OpenCLQueue | cl.CommandQueue
 Buffer = OpenCLBuffers
 
 class Simulator:
-    # Parameters of the simulation : dt, n_substep, etc..
-    # parameters: dict[str, float | int | str] = dict()
-    # All of Kernel to execute
-    # kernel: dict[str, Kernel] = list()  # Use iterator for this one ? Les Operator devront aussi hold les scripts en str pour pouvoir les compiler
-    # All buffers for GPU and CPU
-    # buffers: dict[str, Buffer]    = dict()
-    # Current time value
-    # time: float = 0
-    # Occuped GPU memory
-    # memoryGPU: float
-    # States of the simulation #["Initialisation", "Sending Data", "Receving Data", "Computing", "Waiting", "Closing", ...]
-    # state: str
 
     def __init__(self, op: BlSimInputOperator) -> None:
         """
@@ -40,13 +38,10 @@ class Simulator:
         self.dt       : float = op.fps/float(op.n_substep)
 
         # Queues where the computation can be done
-        # platforms = cl.get_platforms()
-        # self.gpu_context = cl.Context(dev_type=cl.device_type.ALL, properties=[(cl.context_properties.PLATFORM, platforms[0])])
         self.gpu_context = cl.create_some_context(interactive=False)
         self.queue    : Queue = cl.CommandQueue(self.gpu_context) # build queeu
 
         # Create the list of kernel
-        # self.kernels = self.operators
         self.buffers: list[str] = list()
         self.kernels: list[Operator] = list()
 
@@ -100,8 +95,6 @@ class Simulator:
         self.input_op = self.ordered_ops.pop(0)
         self.output_op = self.ordered_ops.pop(-1)
 
-        # self.buffers = {datas[inp.data] for inp in sum([op.inputs for op in self.kernels], []) }
-
 
     def start_sim(self, datas: dict[str, Data]) -> None:
         # Create Sim_in and Sim_out buffers
@@ -146,7 +139,6 @@ class Simulator:
         Execute all the Kernels in the graph order on the GPU
         """
         # forward
-        # n_substep = self.parameters["substep"]
         for t in range(self.n_substep):
             self.step_forward(datas)
 
@@ -156,19 +148,6 @@ class Simulator:
         """
         for op in self.ordered_ops:
             op.compute(self.queue, datas)
-
-        return
-        for ker in self.kernels: # cf class _iter__
-            self.state = f"Computing {ker.id_name}" + " | " # op.arg.inputs.get_mee
-            # Retrieve arguements, and GPU context
-            # TODO: Trouver un moyen de chercher les arguments qu'une seule fois ?
-            input_args: dict = {inp.name: datas[inp.data] for inp in ker.inputs}
-            output_args: dict = {out.name: datas[out.data] for out in ker.outputs}
-            input_args.update(output_args)
-            # print( "  "+self.state+"Inputs arguments: ", *[arg.id_name for arg in (input_args+output_args)], sep=", ")
-
-            # Launch the kernel
-            ker.compute(self.queue, input_args) 
 
     def end_frame(self, args: dict[str, Data]) -> None:
         """
@@ -185,28 +164,10 @@ class Simulator:
             # send primitves TODO: this if don't work with numpy array
             if data_h.primitives.size:
                 cl.enqueue_copy(self.queue, data_h.primitives, data_d.buffers["primitives"])
-            if data_h.variables_point:
-                for name, host_buff in data_h.variables_point.items():
+            if data_h.variables:
+                for name, host_buff in data_h.variables.items():
                     if not host_buff.stationary:
-                        cl.enqueue_copy(self.queue, host_buff.value, data_d.buffers[f"pt_var_{name}"])
-            if data_h.variables_prim:
-                for name, host_buff in data_h.variables_prim.items():
-                    if not host_buff.stationary:
-                        cl.enqueue_copy(self.queue, host_buff.value, data_d.buffers[f"prim_var_{name}"])
+                        cl.enqueue_copy(self.queue, host_buff.value, data_d.buffers[f"var_{name}"])
             if data_h.groups:
                 for name, host_buff in data_h.groups.items():
                     cl.enqueue_copy(self.queue, host_buff, data_d.buffers[f"group_{name}"])
-
-    def read_results(self, result: str | list[str], frequency: int=1) -> None: # useless
-        """
-        Called at the 'Simulation Output Node'
-        Read the computed results from the GPU,
-        Send GPU buffer to CPU buffer for the selected data. i.e. Update CPU bUffer.
-        (eventually convert to Blender geometry)
-        """
-        # Est ce que les valeurs que l'on output sont renvoyé à l'input ? 
-        # Oui car les datas / buffers peuvent changer de nom et de taille
-        pass
-
-
-

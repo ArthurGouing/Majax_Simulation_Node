@@ -29,7 +29,8 @@ class BlCreateAttributeOperator(Operator):
         self.var_type = node.var_type
         # Parameter of the variable attribute
         self.is_uniform = node.is_uniform
-        self.is_stationary = node.is_uniform
+        self.is_stationary = node.is_stationary
+        self.is_local_memory = node.is_local_memory
 
         # Size of the attribute
         self.is_vec = node.is_vec
@@ -81,8 +82,11 @@ class BlCreateAttributeOperator(Operator):
         else:
             dtype = np.single
 
-        var = Variable(value, self.is_uniform, self.is_stationary, dtype=dtype)
+        if self.is_local_memory:
+            var = Variable(size=local_size*tot_size, uniform=self.is_uniform, stationary=self.is_stationary, dtype=dtype)
+        else:
+            var = Variable(value=value, uniform=self.is_uniform, stationary=self.is_stationary, dtype=dtype)
 
         # Create the attribute into the geometry
-        geo.update_variable_point(self.var_name, var)
+        geo.update_variable(self.var_name, var)
         return

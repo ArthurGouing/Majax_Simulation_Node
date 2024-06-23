@@ -38,22 +38,16 @@ class OpenCLBuffers:
             )
             self.buffers.update({"primitives": buffer_primitives})
 
-        if geo.variables_point:
-            for name, val in geo.variables_point.items():
-                buffer = (
-                    cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=val.value)
-                    if not val.uniform
-                    else val.value
-                )
-                self.buffers.update({f"pt_var_{name}": buffer})
-        if geo.variables_prim:
-            for name, val in geo.variables_prim.items():
-                buffer = (
-                    cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=val.value)
-                    if not val.uniform
-                    else val.value
-                )
-                self.buffers.update({f"prim_var_{name}": buffer})
+        if geo.variables:
+            for name, val in geo.variables.items():
+                if val.empty:
+                    # buffer = cl.Buffer(self.context, mf.READ_WRITE, size=val.size)
+                    buffer = cl.LocalMemory(val.size)
+                elif val.uniform:
+                    buffer = val.value
+                else:
+                    buffer = cl.Buffer(self.context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=val.value)
+            self.buffers.update({f"var_{name}": buffer})
         if geo.groups:
             for name, val in geo.groups.items():
                 buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=val.value)
