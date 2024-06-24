@@ -47,7 +47,7 @@ class OpenCLBuffers:
                     buffer = val.value
                 else:
                     buffer = cl.Buffer(self.context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=val.value)
-            self.buffers.update({f"var_{name}": buffer})
+                self.buffers.update({f"var_{name}": buffer})
         if geo.groups:
             for name, val in geo.groups.items():
                 buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=val.value)

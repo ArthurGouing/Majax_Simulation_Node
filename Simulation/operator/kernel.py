@@ -96,10 +96,11 @@ class OpenCLKernelOperator(Operator):
 
         for str_arg in arguments:
             # Buffer case
-            # str_arg = (global|local|...) (float|int|...) name
+            # str_arg = (global|local|...) (float|int|...) *name
             r = re.findall("\s*(\w*)\s*(\w+)\s*(\*)(\w+)", str_arg) 
+            r = re.findall("\s*(\w+)\s+(\w+)(\s+(\*)\s*|\s*(\*)\s+)(\w+)", str_arg)
             if r:
-                arg_name = r[0][3]
+                arg_name = r[0][5]
                 name = self.alias.get(arg_name, arg_name)
                 split = name.split("_")
                 object_name = split[0]
@@ -143,10 +144,15 @@ class OpenCLKernelOperator(Operator):
         # le buffer[name].data c'est le cl.Buffer
         for id, arg_info in self.ker_argument_name.items():
             data_name = arg_info["data_id"]
+            # if not data_name in buffers: TODO: un Kernel debug qui a des prints dans sont compute. ou un kerenel option, qui load un autre operateur, qui a des print dans son compute.
+            #     print(f"Error: The data {data_name} does'nt exist.")
+            #     print("Kernel argument info: ", arg_info)
+            #     print("Available buffers:", buffers.keys())
+            #     return
             # print(f"add {object_name} {arg_info.get('buffer', '')} to {id}")
             if arg_info["type"]=="buffer":
                 buffer_name = arg_info["buffer"]
-                data = buffers[data_name].data.buffers[buffer_name]
+                data = buffers[data_name].data.buffers[buffer_name] # Todo faire un error handling. Si l'utilisateur a mis le mauvais nom de variable/alias, ca plante a cette ligne. Et c'est une erreur qui arrivera couremment.
                 self.kernel.set_arg(id, data)
             elif arg_info["type"]=="numpy":
                 data = buffers[data_name].data
@@ -162,7 +168,7 @@ class OpenCLKernelOperator(Operator):
         # Correct previous design error TODO:
         point_size = buffer.point_size
         point_shape = buffer.point_shape
-        if buffer.prim_size:
+        if hasattr(buffer, "prim_size"):
             prim_size = buffer.prim_size
             prim_shape = buffer.prim_shape
 

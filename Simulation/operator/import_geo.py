@@ -28,7 +28,7 @@ class BlImportGeoOperator(Operator):
 
         # Build points
         for v in self.obj.data.vertices:
-            points.append([v.co.x, v.co.y, v.co.z])
+            points.append([v.co.x, v.co.y, v.co.z, 1.0])
 
         # Build primitives : Edge case
         if self.prim_type=="EDGE":
