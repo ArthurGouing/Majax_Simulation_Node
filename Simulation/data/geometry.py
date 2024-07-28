@@ -2,56 +2,7 @@
 import numpy as np
 from .variable import Variable
 
-"""
-x,y,z coordonate of the point
-"""
-
-
-class Point:
-
-    def __init__(self, x: float, y: float, z: float) -> None:
-        """Init x, y, z values"""
-        self.x: float = x
-        self.y: float = y
-        self.z: float = z
-
-    def __getitem__(self, item: int) -> float:
-        """
-        Permit to access Point data as a list.
-        example: Point[0] == Point.x
-        """
-        if item == 0:
-            return self.x
-        if item == 1:
-            return self.y
-        if item == 2:
-            return self.z
-
-
-"""
-Prim for primitives, contain a list of point, which can be link to create a primitive.
-it can be Line, Triangle, Quadrilateral, Tetrahedron. They can be uses for computation
-or to represente the face  of the geometry for displaying the geometry.
-"""
 type_len = {"Line": 2, "Triangle": 3, "Quadrilateral": 4, "Tetrahedron": 4}
-
-
-class Prim:
-
-    def __init__(self, type_name: str, indices: list[int]) -> None:
-        """Init the type and indices values"""
-        self.type: str = type_name  # Choice between ["Line", "Triangle", "Tetrahedron", "Quadrilateral"]
-        self.indices: list[int] = list()
-        # if init with list
-        if len(indices) != type_len[self.type]:
-            print("ERROR")
-            return
-        self.indices = indices
-
-    def __getitem__(self, item) -> int:
-        """Permit to use prim[0] to acces indices values"""
-        return self.indices[item]
-
 
 """
 Geometry is a data class which contain the information of the geometry for the computation.
@@ -81,12 +32,12 @@ class Geometry:
                 # self.prim_len = type_len[len(primitives[0])]
                 self.primitives = np.array(primitives, dtype=np.int32)
 
-    def add_point(self, point: Point) -> None:
+    def add_point(self, point: np.ndarray[float]) -> None:
         """Add a point to the list of point"""
         p = np.array([point.x, point.y, point.z])
         np.append(self.points, [p])
 
-    def add_prim(self, prim: Prim) -> None:
+    def add_prim(self, prim: np.ndarray[int]) -> None:
         """Add a prim to the list of prim"""
         prim = np.array(prim.indices)
         np.append(self.primitives, [prim])

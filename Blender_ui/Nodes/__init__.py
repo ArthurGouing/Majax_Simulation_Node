@@ -14,6 +14,7 @@ from .vector_parameter import VectorParameterNode
 from .transform_combine import TransformCombineNode
 from .kernel_copy import KernelCopyNode
 from .new_attribute import CreateAttributeNode
+from .import_oct import ImportOctNode
 
 # Déclaration des éléments à exposer lors de l'importation du package
 __all__ = ['SimInputNode',
@@ -29,4 +30,5 @@ __all__ = ['SimInputNode',
            'TransformCombineNode',
            'KernelCopyNode',
            'CreateAttributeNode',
+           'ImportOctNode',
            ]

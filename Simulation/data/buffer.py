@@ -1,11 +1,19 @@
+#################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+#### Library Import ####
 import numpy as np
 import pyopencl as cl
 
+#### Local Import #### 
 from Simulation.queue_gpu import OpenCLQueue
 from Simulation.data.geometry import Geometry
-
-
-## Quand on update les buffers, Ce sont des kernels en soit, il faudra les faire dans kernel ?
+from Simulation.data.octree import Octree
 
 
 class OpenCLBuffers:
@@ -21,6 +29,21 @@ class OpenCLBuffers:
         self.point_size = size
         buffer = cl.Buffer(self.context, mf.READ_WRITE, size=size, hostbuf=None)
         self.buffers.update({"points": buffer})
+
+    def init_from_oct(self, oct: Octree) -> None:
+        mf = cl.mem_flags
+
+
+        self.buffers.update({"octree": buffer_octree})
+
+        if oct.primitives.size:
+            self.prim_size = oct.primitives.size
+            self.prim_shape = oct.primitives.shape
+            buffer_primitives = cl.Buffer(
+                self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=oct.primitives
+            )
+            self.buffers.update({"primitives": buffer_primitives})
+        pass
 
     def init_from_geo(self, geo: Geometry) -> None:
         mf = cl.mem_flags
@@ -53,10 +76,6 @@ class OpenCLBuffers:
                 buffer = cl.Buffer(self.context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=val.value)
                 self.buffers.update({f"group_{name}": buffer})
 
-    def update_gpu(self, geo: Geometry) -> cl.Event:  # ??
-        # TODO: usefull for converter node. I don't see a case where it is usefull as
-        # all buffer must be used in the simulation loop ...
-        pass
 
     def update_cpu(self, geo: Geometry, queue: cl.CommandQueue) -> cl.Event:  # ??
 

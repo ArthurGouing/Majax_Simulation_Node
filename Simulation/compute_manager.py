@@ -68,6 +68,8 @@ class ComputeManager: # Client
         print("Pre proc: ", [i.id_name for i in self.pre_process.ordered_ops])
         for sim in self.simulators:
             print(f"Simulator ({sim.queue.device.name}):", [ op.id_name for op in sim.ordered_ops])
+            print(f"Sim in  ({sim.queue.device.name}):", sim.output_op)
+            print(f"Sim out ({sim.queue.device.name}):", sim.input_op)
         print("Post proc:", [i.id_name for i in self.post_process.ordered_ops])
 
     def read_graph(self, bl_nodes: Nodes, bl_links: NodeLinks) -> tuple[dict[str, Operator], dict[str, Data]]:

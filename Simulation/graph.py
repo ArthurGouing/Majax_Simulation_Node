@@ -1,63 +1,95 @@
-# Computation grapmh: interface pour manipuler mes graphs avec mon compute_manager
-# simulator: Simulator# can totally be inside the operators, with a compute functions
-#from ..Blender_ui import SimulationNodeTree
-# Add current dir to pythonpath
-from bpy.types import NodeLink, Node
-# from Blender_ui import SimulationNodeTree as bl_tree
+#################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+#### Local Import #### 
 from Simulation.data.data_base import Data, Argument
 from Simulation.operator import Operator, __dict__
 
-def compute_order(ops: dict[str, Operator], args: dict[str, Data], options: str=None, input_ops_name: list[str]=None, output_ops_name: list[str]=None) -> list[Operator]:
-    """
-    Return the ordered operators ready for computations
-    Args:
-        option: methode used to build the op_order. choose between ["..."]
-        input_op: list of operator type to stop searching
-        output_op: list of operator type to start the searching
-    (because the orderer_op is build from the output)
-    """
-    # Init
-    ordered_op: list[Operator] = list()
-    # Output operator, where we start walking on the graph
-    output_ops: list[Operator] = [op for op in ops.values() if op.__class__.__name__ in output_ops_name]
-    # Liste des Data que l'l'operator prend en input
-    for op in output_ops:
-        if not op.inputs:
-            continue
+class Orderer:
+    def __init__(self, ops: dict[str, Operator], datas: dict[str, Data], input_ops_name: list[str]=None, output_ops_name: list[str]=None) -> None:
+        # Initi varuable
+        self.ops = ops
+        self.datas = datas
+        self.end_operators   = [op for op in ops.values() if op.__class__.__name__ in output_ops_name]
+        self.start_operators = [op for op in ops.values() if op.__class__.__name__ in input_ops_name] 
+
+        self.ordered_ops = list()
+        self.sim_in  = None
+        self.sim_out = None
+
+        for op in self.end_operators:
+            self.find_required_op(op)
+        self.ordered_ops.reverse()
+
+    def find_required_op(self, op: Operator) -> None:
+        """ Add to oredered_ops, all the operator that need to be computed before computing op"""
+        # Add operator 
+        if op not in self.ordered_ops:
+            self.ordered_ops.append(op)
+
+        # track sim_in/sim_out operator
+        if op.__class__.__name__=="BlSimInputOperator":
+            self.sim_in=op
+        elif op.__class__.__name__=="BlSimOutputOperator":
+            self.sim_out=op
+
+        # End condition
+        if op in self.start_operators:
+            return
+
+        # Recursive find required ops
         for inp in op.inputs:
-            find_available_input(ops, args, inp, ordered_op, input_ops_name)
-        ordered_op.append(op)
-    return ordered_op
+            inp_op = self.ops[inp.from_op]
+            self.find_required_op(inp_op)
+        if not op.inputs and op not in self.start_operators:
+            print(f"Error: {op.id_name}, is not in start_operator and don't have input. Nothing happened in find_required_op function")
 
-def find_available_input( ops: dict[str, Operator], datas: dict[str, Data], arg: Argument, ordered_op: list[Operator], stop_op: list[str]=None) -> bool:
-    """
-    Correct name should be find/fill argument dependency
-    i.e. add all the op that need to be computed before to create the argument 'arg'
-    """
-    op_name = arg.from_op
-    op = ops[op_name]
-    # If the operator has already been execute, the input argument is available
-    # if op in ordered_op: # useless
-    #     return
-    # End of the dependency chain
-    if not op.inputs: # End of the dependency chain
-        if op not in ordered_op:
-            ordered_op.append(op)
-        for out in op.outputs: 
-            # output_data = args[out] # output_data = self.get_data(out)
-            # output_data.computable = True
-            datas[out.data].computable = True
-    # Loop on inputs of the precedent operator
-    else: 
+    def find_kernels(self, path_list: list[list[Operator]]) -> set[Operator]:
+        # Tourver tous les paths
+        paths = [[]]
+        for op in self.end_operators:
+            self.find_paths(op, paths, 0)
+        print("all path: ")
+        for p in paths:
+            print([o.id_name for o in p], end=" | ")
+        print("")
+
+        # Garder les paths d'Operator qui vivent exclusivement sur GPU
+        paths = [p for p in paths if p[-1]==self.sim_in]
+                
+        print("ker path", [o.id_name for o in sum(paths, [])])
+
+        # faire un set des kernels du simulator + simin/simout
+        kernels = set()
+        for op in sum(paths, []):
+            kernels.add(op)
+        print("all kernel", [o.id_name for o in kernels])
+
+        return kernels
+
+    def find_paths(self, op: Operator, paths: list[list[Operator]], path_id: int) -> None:
+        # Add op to paths
+        paths[path_id].append(op)
+
+        # End recursive chaine condition
+        if op == self.sim_in:
+            return
+
+        # Recursive on all inputs argument operators
+        is_first=True
+        actual_path = paths[path_id].copy()
         for inp in op.inputs:
-            if  op.__class__.__name__ not in stop_op and not datas[inp.data].computable:
-                find_available_input(ops, datas, inp, ordered_op, stop_op)
-            datas[inp.data].computable = False # same as checking op  in ordered_op
-        if op not in ordered_op:
-            ordered_op.append(op)
-        
-
-
-
-
-
+            inp_op = self.ops[inp.from_op]
+            # Compute the next pahts
+            if  is_first:
+                self.find_paths(inp_op, paths, path_id)
+                is_first=False
+            # Create a new path
+            else:
+                paths.append(actual_path.copy())
+                self.find_paths(inp_op, paths, len(paths)-1)

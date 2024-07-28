@@ -122,7 +122,11 @@ class OpenCLKernelOperator(Operator):
                 arg_name = r[0][2]
                 name = self.alias.get(arg_name, arg_name)
                 arg_info = {"name": name}
-                arg_info.update({"data_id": name})
+                data_id_list = [arg.data for arg in sum([self.inputs, self.outputs], []) if arg.name==name]
+                if not data_id_list:
+                    print(f"Error: '{name}' not finded in {[arg.name for arg in sum([self.inputs, self.outputs], [])]} while processing {str_arg}")
+                data_id = data_id_list[0]
+                arg_info.update({"data_id": data_id})
                 arg_info.update({"type": "numpy"})
                 self.ker_argument_name.update({arg_id: arg_info})
                 arg_id+=1
@@ -136,12 +140,6 @@ class OpenCLKernelOperator(Operator):
         if not self.worksize:
             buffer = [buf for buf in buffers.values() if buf.data_type=="Buffers"][0]
             self.compute_worksize(buffer.data) # i.e. Get le 1er buffer geometry inout
-
-        # TODO: A chaque subit !!( très souvent !!!) (~10% pour 250 elements)
-        # on a des test condition et des lecture de dictionnaire
-        # Alors que une fois qu'on a trouvé le chemain, c'est tjrs le meme à chaque ité
-        # Il faudrait que buffers contienne tous les buffers indiférement du OpenCLBuffer class
-        # le buffer[name].data c'est le cl.Buffer
         for id, arg_info in self.ker_argument_name.items():
             data_name = arg_info["data_id"]
             # if not data_name in buffers: TODO: un Kernel debug qui a des prints dans sont compute. ou un kerenel option, qui load un autre operateur, qui a des print dans son compute.
@@ -158,6 +156,12 @@ class OpenCLKernelOperator(Operator):
                 data = buffers[data_name].data
                 self.kernel.set_arg(id, data)
         # TODO: des msg d'erreur clair !
+
+        # TODO: A chaque subit !!( très souvent !!!) (~10% pour 250 elements)
+        # on a des test condition et des lecture de dictionnaire
+        # Alors que une fois qu'on a trouvé le chemain, c'est tjrs le meme à chaque ité
+        # Il faudrait que buffers contienne tous les buffers indiférement du OpenCLBuffer class
+        # le buffer[name].data c'est le cl.Buffer
 
         # Launch the kernel
         event = cl.enqueue_nd_range_kernel(queue, self.kernel, self.worksize, None) # can specify local_work_size

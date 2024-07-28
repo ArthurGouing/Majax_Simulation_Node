@@ -1,17 +1,17 @@
-from .graph import compute_order
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+#### Local Import #### 
+from .graph import Orderer
 from .operator import Operator
 from Simulation.data.data_base import Data
 
 class PostProcessing:
-    # Operator data
-    # ops:  dict[str, Operator]
-    # Argument data
-    # args: dict[str, Data] # datas c'est mieux ?
-    # Ordered list of operator id_name in order to make the computation
-    ordered_ops: list[Operator]
-    # Information about the computation
-    state: str
-
     def __init__(self) -> None:
         """Init pre processing computer manager"""
         self.state = "Initialisation"
@@ -23,10 +23,15 @@ class PostProcessing:
         # from .operator import * 
         # BlSimOutputOperator
         inputs: list[str] = ["BlSimOutputOperator"]
-        ouputs: list[str] = ["BlExportGeoOperator"]
-        self.ordered_ops = compute_order(ops, args, input_ops_name=inputs, output_ops_name=ouputs)
-        self.ordered_ops = self.ordered_ops[1:] # TODO: faire un truc qui supprime les SimOutputs,
-                                                # car c'est pas forcément le 1er, et il peut y en avoir plusieurs !
+        outputs: list[str] = ["BlExportGeoOperator"]
+
+        order = Orderer(ops, args, inputs, outputs)
+        self.ordered_ops = order.ordered_ops.copy()
+
+        if order.sim_out in self.ordered_ops:
+            self.ordered_ops.remove(order.sim_out)
+
+        del order
 
     def compute(self, datas: dict[str, Data]) -> None:
         """Compute the pre processing operators"""

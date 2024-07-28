@@ -1,6 +1,10 @@
-# Base class for operator
-# Operator correspond to a node, they will execute the operation when the graph is executed
-print("Reload operator base")
+#################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
 
 #### Library Import #### 
 from abc import ABC, abstractmethod

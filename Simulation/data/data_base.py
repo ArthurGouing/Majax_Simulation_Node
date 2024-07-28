@@ -1,11 +1,22 @@
+#################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+
+#### Library Import ####
 import sys
 import numpy as np
 from abc import ABC
+
+#### Blender Import #### 
 from bpy.types import NodeLink, Object, NodeSocket
 
-
+#### Local Import #### 
 from .geometry import Geometry
-# from Simulation import Operator # for typing hint
 
 
 DataType = Geometry | Object # | float | int | bool | Vector | Rotation | Transformation

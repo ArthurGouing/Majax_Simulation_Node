@@ -7,15 +7,13 @@
 #############################################################
 
 #### Library Import ####
-from typing import Optional
-import numpy as np
 import pyopencl as cl
 
 #### Local Import #### 
 from .operator.kernel import OpenCLKernelOperator
 from .queue_gpu import OpenCLQueue
 from .data.buffer import OpenCLBuffers
-from .graph import compute_order
+from .graph import Orderer
 from .operator import Operator, BlSimInputOperator
 from Simulation.data.data_base import Data
 from Simulation.control_structure import ControlStructure
@@ -52,13 +50,27 @@ class Simulator:
     def order(self, ops: dict[str, Operator], struct_ctrl: dict[str, ControlStructure], datas: dict [str, Data]) -> None:
         """ Called when the graph is updated and eventually some parameters or changed """
         inputs: list[str] = ["BlSimInputOperator"]
-        ouputs: list[str] = ["BlSimOutputOperator"]
-        self.ordered_ops = compute_order(ops, datas, input_ops_name=inputs, output_ops_name=ouputs)
-        # Retreive Sim input and Sim output operators
-        self.kernels = self.ordered_ops[1:-1] # == kernels
+        outputs: list[str] = ["BlSimOutputOperator"]
+        order = Orderer(ops, datas, inputs, outputs)
+        self.ordered_ops = order.ordered_ops.copy()
+        self.input_op  = order.sim_in
+        self.output_op = order.sim_out
+        
+        print("Sim ordered list 1:", [o.id_name for o in self.ordered_ops])
+
+        self.kernels = order.find_kernels([])
+
+        # supprimer dans l'ordered list si c'est dans le set
+        # for op in self.ordered_ops:
+        #     if op not in self.kernels:
+        #         self.ordered_ops.remove(op)
+        self.ordered_ops = [op for op in self.ordered_ops if op in self.kernels]
+        # self.ordered_ops = [op for op in self.ordered_ops if (op in self.kernels and op not in [order.sim_in, order.sim_out])]
+
+        print("Sim ordered list 2:", [o.id_name for o in self.ordered_ops])
 
         # replace base operator by structure control flow
-        # TODO: move that into 'compute_order' and correct it for pos_process and pre_process
+        # TODO: move that into 'Order' and make it work for pos_process and pre_process
         all_struct = list(struct_ctrl.values())
         while all_struct:
             # Find the lower structure level
@@ -92,8 +104,10 @@ class Simulator:
             self.ordered_ops[:last_index] += [struct]
 
         # Store all GPU buffers in a list
-        self.input_op = self.ordered_ops.pop(0)
-        self.output_op = self.ordered_ops.pop(-1)
+        self.kernels.remove(order.sim_in)
+        self.kernels.remove(order.sim_out)
+
+        del order
 
 
     def start_sim(self, datas: dict[str, Data]) -> None:

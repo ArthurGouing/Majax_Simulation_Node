@@ -33,3 +33,8 @@
 - Make the computation of 1 Simulation loop on multiple Accelerator(GPU or CPU) with MPI
 - Lors de la création des parameters node. Pouvoir choisir les unités ! Pour faire ca il faut un enumtypeproperty ou l'on choisit l'unité. Une fois choisis, il faut delete l'ancienne props, et la recréer avec la bonne unit, en lui réassignant les bonnes values.
 - Add the possiblity to create parameter struct to be used in openCl into throught Geometry attribute
+- Redeigner le read graph. Une version plus generale et logique serait de chercher tous les argumentss path. connaussant les argument requis pour calculer un operateur, il nous suffit de calculer unne "intersection" entre les paths des arguments pour connaitre les op qui doivent etre calculé en amont.
+
+
+# Note 
+If you need to load a single python script, such as a set of operations you want to use on a mesh object, you can use the --python flag. ./blender -b --addons animation_nodes,meshlint [file] --python [myscript.py] loads blender in the background, loads specified addons, loads the file, then executes the python script

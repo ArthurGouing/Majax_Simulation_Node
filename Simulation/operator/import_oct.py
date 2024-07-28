@@ -16,10 +16,10 @@ from bpy.types import Node
 #### Local Import #### 
 from .operator_base import Operator
 from Simulation.data.data_base import Data
-from Simulation.data.geometry import Geometry
+from Simulation.data.octree import Octree
 
 
-class BlImportGeoOperator(Operator):
+class BlImportOctOperator(Operator):
     def __init__(self, node: Node) -> None:
         super().__init__(node.name)
         self.prim_type = node.geo_options
@@ -50,4 +50,4 @@ class BlImportGeoOperator(Operator):
 
         # Store Geometry
         dtype = np.double if self.use_double else np.single
-        args[0].data = Geometry(points, prims, dtype)
+        args[0].data = Octree(points, prims, dtype)

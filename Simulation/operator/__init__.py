@@ -13,6 +13,7 @@ from .create_integer import BlCreateIntegerOperator
 from .create_vector import BlCreateVectorOperator
 from .kernel_copy import BlKernelCopyOperator
 from .create_attribute import BlCreateAttributeOperator
+from .import_oct import BlImportOctOperator
 
 __all__ = ['Operator',
            'BlOpenCLKernelOperator',
@@ -26,5 +27,6 @@ __all__ = ['Operator',
            'BlCreateIntegerOperator',
            'BlCreateVectorOperator',
            'BlKernelCopyOperator',
-           'BlCreateAttributeOperator'
+           'BlCreateAttributeOperator',
+           'BlImportOctOperator'
            ]

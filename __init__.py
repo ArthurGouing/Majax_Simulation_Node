@@ -105,6 +105,7 @@ node_categories = [
         "Inputs Datas",
         items=[
             NodeItem("ImportGeoNode"),
+            NodeItem("ImportOctNode"),
             NodeItem("FloatParameterNode"),
             NodeItem("VectorParameterNode"),
             NodeItem("IntegerParameterNode"),

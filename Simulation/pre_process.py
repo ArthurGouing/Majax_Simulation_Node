@@ -1,6 +1,14 @@
-from .simulator import Simulator
-from .graph import compute_order
-from .operator import Operator, BlSimInputOperator
+#############################################################
+# Copyright (C) 2025 Arthur Gouinguenet - All Rights Reserved
+# This file is part of Majax Simulation Node project which is
+# delivered under GNU General Public Liscense.
+# For any questions or requests related to the use of this work
+# please contact me directly at arthur.gouinguenet@free.fr
+#############################################################
+
+#### Local Import #### 
+from .graph import Orderer
+from .operator import Operator
 from Simulation.data.data_base import Data
 
 class PreProcessing:
@@ -18,11 +26,16 @@ class PreProcessing:
     def order(self, ops: dict[str, Operator], args: dict[str, Data]) -> None:
         """Change the inputs and operators according to the graphs. rebuild or change"""
         self.state = "Updating graph"
-        inputs: list[str] = ["BlImportGeoOperator"]
-                            # + ["CreateBufferNode"]
-        ouputs: list[str] = ["BlSimInputOperator"]
-        self.ordered_ops = compute_order(ops, args, input_ops_name=inputs, output_ops_name=ouputs)
-        self.ordered_ops = self.ordered_ops[:-1]
+        inputs: list[str] = ["BlImportGeoOperator"] # TODO: Faire par type plutot que par nom. Cela permettra de facilement ajouter de nouvelle node, avcec les comportements adéqua
+        outputs: list[str] = ["BlSimInputOperator", "BlCreateFloatOperator"]
+
+        order = Orderer(ops, args, inputs, outputs)
+        self.ordered_ops = order.ordered_ops.copy()
+
+        if order.sim_in in self.ordered_ops:
+            self.ordered_ops.remove(order.sim_in)
+
+        del order
 
     def compute(self, datas: dict[str, Data]) -> None:
         """Compute the pre processing operators"""
